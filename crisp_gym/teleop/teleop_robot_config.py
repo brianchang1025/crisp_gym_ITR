@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
-from crisp_py.gripper import GripperConfig
-from crisp_py.robot import FrankaConfig, make_robot_config
+from crisp_py.gripper.gripper_config import GripperConfig
+from crisp_py.robot.robot_config import FrankaConfig, PandaConfig,  make_robot_config
 
 from crisp_gym.config.path import CRISP_CONFIG_PATH, find_config, list_configs_in_folder
 
 if TYPE_CHECKING:
-    from crisp_py.robot import RobotConfig
+    from crisp_py.robot.robot_config import RobotConfig
 
 
 @dataclass
@@ -81,7 +81,7 @@ class TeleopRobotConfig(ABC):
 class LeftAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
     """Configuration for the left robot as a leader."""
 
-    leader: RobotConfig = field(default_factory=lambda: FrankaConfig())
+    leader: RobotConfig = field(default_factory=lambda: PandaConfig())
     leader_gripper: GripperConfig | None = field(
         default_factory=lambda: GripperConfig.from_yaml(
             path=(find_config("trigger_left.yaml")).resolve()
@@ -100,7 +100,7 @@ class LeftAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
 class RightAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
     """Configuration for the right robot as a leader."""
 
-    leader: RobotConfig = field(default_factory=lambda: FrankaConfig())
+    leader: RobotConfig = field(default_factory=lambda: PandaConfig())
     leader_gripper: GripperConfig | None = field(
         default_factory=lambda: GripperConfig.from_yaml(
             path=(find_config("gripper_right.yaml")).resolve()
@@ -119,7 +119,7 @@ class RightAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
 class NoGripperTeleopRobotConfig(TeleopRobotConfig):
     """Configuration for a teleoperation robot without a gripper."""
 
-    leader: RobotConfig = field(default_factory=lambda: FrankaConfig())
+    leader: RobotConfig = field(default_factory=lambda: PandaConfig())
     leader_gripper: GripperConfig | None = None
 
     gravity_compensation_controller: Path = field(

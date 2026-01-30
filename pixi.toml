@@ -14,7 +14,7 @@ scripts = [
 ]
 
 [dependencies]
-python = "3.11.*"
+python = "3.12.*"
 compilers = "*"
 cmake = "*"
 pkg-config = "*"
@@ -53,17 +53,6 @@ lerobot = { git = "https://github.com/huggingface/lerobot", rev = "dacd1d7f5c719
 # === Local version ===
 # lerobot = { path = "../lerobot/", editable = true }
 
-[feature.humble]
-channels = ["https://prefix.dev/robostack-humble"]
-
-[feature.humble.dependencies]
-ros-humble-desktop = "*"
-colcon-common-extensions = "*"
-ros-humble-ros2-control = "*"
-ros-humble-ros2-controllers = "*"
-rosdep = "*"
-ros-humble-rmw-cyclonedds-cpp = "*"
-ros-humble-image-transport-plugins = "*"
 
 [feature.jazzy]
 channels = ["https://prefix.dev/robostack-jazzy"]
@@ -79,7 +68,6 @@ ros-jazzy-rmw-zenoh-cpp = "*"
 
 [pypi-dependencies]
 crisp_gym = { path = ".", editable = true }
-# crisp_python = { path = "../crisp_py", editable = true }
-
+crisp-python = { git = "https://github.com/brianchang1025/crisp_py_panda"}
 [tasks]
 configure = "bash scripts/configure.sh"

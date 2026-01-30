@@ -3,7 +3,7 @@
 
 # Dataset configuration
 repo_id: "example_dataset"
-robot_type: "Franka"
+robot_type: "panda"
 resume: false
 fps: 30
 num_episodes: 3

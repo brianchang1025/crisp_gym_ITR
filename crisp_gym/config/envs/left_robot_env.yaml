@@ -4,7 +4,7 @@ cartesian_control_param_config: null  # Will use CRISP_CONFIG_PATH defaults
 joint_control_param_config: null      # Will use CRISP_CONFIG_PATH defaults
 
 robot_config:
-  robot_type: "franka"
+  robot_type: "panda"
   time_to_home: 2.0
   publish_frequency: 50.0
   home_config:

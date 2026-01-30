@@ -1,5 +1,5 @@
 leader:
-  robot_type: franka
+  robot_type: panda
 
 leader_gripper:
   min_value: 0.0

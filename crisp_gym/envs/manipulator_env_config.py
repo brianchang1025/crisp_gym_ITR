@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 from crisp_py.camera.camera_config import CameraConfig
 from crisp_py.gripper.gripper import GripperConfig
-from crisp_py.robot.robot_config import FrankaConfig, RobotConfig, make_robot_config
+from crisp_py.robot.robot_config import FrankaConfig, PandaConfig, RobotConfig, make_robot_config
 from crisp_py.sensors.sensor_config import SensorConfig
 from crisp_py.utils.geometry import OrientationRepresentation
 
@@ -327,6 +327,59 @@ class RightNoCamFrankaEnvConfig(NoCamFrankaEnvConfig):
         )
     )
 
+@dataclass(kw_only=True)
+class PandaEnvConfig(ManipulatorEnvConfig, ABC):
+    """Franka Gym Environment Configuration."""
+
+    control_frequency: float = 30.0
+
+    robot_config: RobotConfig = field(default_factory=lambda: PandaConfig())
+
+    # Default controller configurations for Franka
+    cartesian_control_param_config: Path | None = field(
+        default_factory=lambda: find_config("control/default_cartesian_impedance.yaml")
+        or CRISP_CONFIG_PATH / "control" / "default_cartesian_impedance.yaml"
+    )
+    joint_control_param_config: Path | None = field(
+        default_factory=lambda: find_config("control/joint_control.yaml")
+        or CRISP_CONFIG_PATH / "control" / "joint_control.yaml"
+    )
+
+@dataclass
+class NoCamPandaEnvConfig(PandaEnvConfig):
+    """Franka Gym Environment Configuration."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig(min_value=0, max_value=1)
+    )
+
+    camera_configs: List[CameraConfig] = field(default_factory=lambda: [])
+
+
+@dataclass
+class LeftNoCamPandaEnvConfig(NoCamPandaEnvConfig):
+    """Franka Gym Environment Configuration for the left robot without cameras."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(
+                find_config("gripper_left.yaml") or CRISP_CONFIG_PATH / "gripper_left.yaml"
+            ).resolve()
+        )
+    )
+
+
+@dataclass
+class RightNoCamPandaEnvConfig(NoCamPandaEnvConfig):
+    """Franka Gym Environment Configuration for the right robot without cameras."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(
+                find_config("gripper_right.yaml") or CRISP_CONFIG_PATH / "gripper_right.yaml"
+            ).resolve()
+        )
+    )
 
 @dataclass
 class OnlyWristCamFrankaEnvConfig(FrankaEnvConfig):
@@ -450,6 +503,16 @@ class NoCamNoGripperFrankaEnvConfig(FrankaEnvConfig):
 
     gripper_mode: GripperMode | str = GripperMode.NONE
 
+@dataclass
+class NoCamNoGripperPandaEnvConfig(PandaEnvConfig):
+    """Panda Gym Environment Configuration without cameras and gripper."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig(min_value=0, max_value=1)
+    )
+    camera_configs: List[CameraConfig] = field(default_factory=lambda: [])
+
+    gripper_mode: GripperMode | str = GripperMode.NONE
 
 def make_env_config(
     env_type: str,
@@ -502,4 +565,9 @@ STRING_TO_CONFIG = {
     "right_no_cam_franka": RightNoCamFrankaEnvConfig,
     "only_wrist_cam_franka": OnlyWristCamFrankaEnvConfig,
     "no_cam_no_gripper_franka": NoCamNoGripperFrankaEnvConfig,
+    "panda": PandaEnvConfig,
+    "no_cam_panda": NoCamPandaEnvConfig,
+    "left_no_cam_panda": LeftNoCamPandaEnvConfig,
+    "right_no_cam_panda": RightNoCamPandaEnvConfig,
+    "no_cam_no_gripper_panda": NoCamNoGripperPandaEnvConfig
 }

@@ -1,5 +1,5 @@
 leader:
-  robot_type: "franka"
+  robot_type: "panda"
   publish_frequency: 50.0
   time_to_home: 2.0
   home_config:
