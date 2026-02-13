@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 def _leader_gripper_to_action(
-    leader_value: float,
-    follower_value: float,
+    leader_value: float | bool,
+    follower_value: float | bool,
     control_mode: GripperMode | str,
 ) -> float:
     """Convert the leader gripper value to an action for the follower gripper.
@@ -142,8 +142,8 @@ def make_teleop_fn(env: ManipulatorBaseEnv, leader: TeleopRobot) -> Callable:
         prev_joint = joint
 
         gripper_action = _leader_gripper_to_action(
-            leader_value=leader.gripper.value if leader.gripper is not None else 0.0,
-            follower_value=env.gripper.value if env.gripper is not None else 0.0,
+            leader_value=leader.gripper.closing_state() if leader.gripper is not None else False,
+            follower_value=env.gripper.closing_state() if env.gripper is not None else False,
             control_mode=env.config.gripper_mode,
         )
 

@@ -221,7 +221,8 @@ def main():
             leader.prepare_for_teleop()
 
         env.wait_until_ready()
-        env.home(home_config=HomeConfig.CLOSE_TO_TABLE.randomize(noise=args.home_config_noise))
+        #env.home(home_config=HomeConfig.CLOSE_TO_TABLE.randomize(noise=args.home_config_noise))
+        env.home()
         env.reset()
 
         tasks = list(args.tasks)

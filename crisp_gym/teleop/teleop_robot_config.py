@@ -84,7 +84,7 @@ class LeftAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
     leader: RobotConfig = field(default_factory=lambda: PandaConfig())
     leader_gripper: GripperConfig | None = field(
         default_factory=lambda: GripperConfig.from_yaml(
-            path=(find_config("trigger_left.yaml")).resolve()
+            path=(find_config("gripper_left.yaml")).resolve()
         )
     )
 
@@ -93,7 +93,7 @@ class LeftAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
     )
 
     leader_namespace: str = "left"
-    leader_gripper_namespace: str = "left/trigger"
+    leader_gripper_namespace: str = "left"
 
 
 @dataclass

@@ -358,7 +358,7 @@ class ManipulatorBaseEnv(gym.Env):
             ):
                 self.gripper.open()
         elif self.config.gripper_mode == GripperMode.ABSOLUTE_CONTINUOUS:
-            self.gripper.set_target(np.clip(action, 0.0, 1.0))
+            self.gripper.set_gripper_state(action) #use new logic in gripper to set gripper state directly instead of using set_target which is for position control
         elif self.config.gripper_mode == GripperMode.RELATIVE_CONTINUOUS:
             self.gripper.set_target(np.clip(self.gripper.value + action, 0.0, 1.0))
         else:

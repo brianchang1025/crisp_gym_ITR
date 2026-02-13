@@ -23,12 +23,23 @@ home_front_up = [
     0.8040582,
 ]
 
+home_panda = [
+    0.0,
+    -0.785,
+    0.0,
+    -2.355,
+    0.0,
+    1.57,
+    0.785,
+]
+
 
 class HomeConfig(Enum):
     """Enum for different home configurations."""
 
     CLOSE_TO_TABLE = home_close_to_table
     FRONT_UP = home_front_up
+    PANDA = home_panda
 
     def randomize(self, noise: float = 0.01) -> list:
         """Randomize the home configuration."""
