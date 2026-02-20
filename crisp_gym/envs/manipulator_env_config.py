@@ -408,6 +408,30 @@ class OnlyWristCamFrankaEnvConfig(FrankaEnvConfig):
         ]
     )
 
+@dataclass
+class OnlyWristCamPandaEnvConfig(PandaEnvConfig):
+    """Franka Gym Environment Configuration."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(
+                find_config("gripper_right.yaml") or CRISP_CONFIG_PATH / "gripper_right.yaml"
+            ).resolve()
+        )
+    )
+
+    camera_configs: List[CameraConfig] = field(
+        default_factory=lambda: [
+            CameraConfig(
+                camera_name="camera",
+                camera_frame="wrist_link",
+                resolution=[256, 256],
+                camera_color_image_topic="/camera/wrist_camera/color/image_raw",
+                camera_color_info_topic="/camera/wrist_camera/color/camera_info",
+            ),
+        ]
+    )
+
 
 @dataclass
 class AlohaFrankaEnvConfig(FrankaEnvConfig):
@@ -569,5 +593,6 @@ STRING_TO_CONFIG = {
     "no_cam_panda": NoCamPandaEnvConfig,
     "left_no_cam_panda": LeftNoCamPandaEnvConfig,
     "right_no_cam_panda": RightNoCamPandaEnvConfig,
-    "no_cam_no_gripper_panda": NoCamNoGripperPandaEnvConfig
+    "no_cam_no_gripper_panda": NoCamNoGripperPandaEnvConfig,
+    "only_wrist_cam_panda": OnlyWristCamPandaEnvConfig,
 }

@@ -249,8 +249,9 @@ def main():
         def on_end():
             """Hook function to be called when stopping the recording."""
             env.robot.reset_targets()
-            random_home = HomeConfig.CLOSE_TO_TABLE.randomize(noise=args.home_config_noise)
-            env.robot.home(blocking=False, home_config=random_home)
+            #random_home = HomeConfig.CLOSE_TO_TABLE.randomize(noise=args.home_config_noise)
+            #env.robot.home(blocking=False, home_config=random_home)
+            env.robot.home(blocking=False)
             if isinstance(leader, TeleopRobot):
                 leader.robot.reset_targets()
                 # Activate incase leader should go to the same position as the follower
