@@ -26,6 +26,7 @@ numpy = ">=2.0.0, <2.3"
 pip = ">=24.0"
 packaging = "<26.0"
 setuptools = "<81.0.0"
+ffmpeg = "*"
 
 [target.linux.dependencies]
 libgl-devel = "*"
@@ -48,7 +49,7 @@ pynput = "*"
 #rerun-sdk = "=0.22.1"
 
 [feature.lerobot.pypi-dependencies]
-lerobot = { git = "https://github.com/huggingface/lerobot", tag = "v0.4.0", extras = ["pi"]}
+lerobot = { git = "https://github.com/huggingface/lerobot", extras = ["pi"]}
 # === Working version ===
 #lerobot = { git = "https://github.com/huggingface/lerobot", rev = "dacd1d7f5c719c3e56d7b7154a751bef6d5bd23c", extras = ["smolvla"]}
 # === Newer version ===
@@ -74,4 +75,4 @@ crisp-python = { git = "https://github.com/brianchang1025/crisp_py_panda"}
 
 [tasks]
 configure = "bash scripts/configure.sh"
-install-lerobot-git = "pip install 'lerobot[pi]@git+https://github.com/huggingface/lerobot.git'"
+#install-lerobot-git = "pip install 'lerobot[pi]@git+https://github.com/huggingface/lerobot.git'"

@@ -179,10 +179,10 @@ class RecordingManager(ABC):
                     obs, action, task = msg["data"]
 
                     logger.debug(f"Received frame with action: {action} and obs: {obs.keys()}")
-
+                    #dataset.set_task(task)
                     # Build frame directly from observation using feature-based approach
                     frame = {"action": action.astype(np.float32)}
-
+                    frame["task"] = task
                     # Add all observation features that match our dataset features
                     for feature_name in self.config.features:
                         if feature_name == "action":
@@ -202,7 +202,7 @@ class RecordingManager(ABC):
                     )
 
                     logger.debug(f"Constructed frame with keys: {frame.keys()}")
-                    dataset.add_frame(frame, task=task)
+                    dataset.add_frame(frame)
 
                 elif mtype == "SAVE_EPISODE":
                     if self.config.use_sound:
@@ -247,7 +247,8 @@ class RecordingManager(ABC):
                         "Pushing dataset to Hugging Face Hub...",
                     )
                     try:
-                        dataset.push_to_hub(repo_id=self.config.repo_id, private=True)
+                        dataset.finalize()
+                        dataset.push_to_hub(private=True)
                         logger.info("Dataset pushed to Hugging Face Hub successfully.")
                     except Exception as e:
                         logger.error(
@@ -258,7 +259,7 @@ class RecordingManager(ABC):
                     logger.info("Shutting down writer process.")
                     break
             except Exception as e:
-                logger.exception("Error occured: ", e)
+                logger.exception("Error occurred", exc_info=True)
             finally:
                 pass
 
