@@ -112,7 +112,7 @@ class RightAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
     )
 
     leader_namespace = "right"
-    leader_gripper_namespace = "right/gripper"
+    leader_gripper_namespace = "right"
 
 
 @dataclass

@@ -415,7 +415,7 @@ class OnlyWristCamPandaEnvConfig(PandaEnvConfig):
     gripper_config: GripperConfig | None = field(
         default_factory=lambda: GripperConfig.from_yaml(
             path=(
-                find_config("gripper_right.yaml") or CRISP_CONFIG_PATH / "gripper_right.yaml"
+                find_config("gripper_left.yaml") or CRISP_CONFIG_PATH / "gripper_left.yaml"
             ).resolve()
         )
     )
@@ -517,6 +517,89 @@ class RightAlohaFrankaEnvConfig(AlohaFrankaEnvConfig):
 
 
 @dataclass
+class AlohaPandaEnvConfig(PandaEnvConfig):
+    """Custom Panda Gym Environment Configuration for Panda with an Aloha gripper and cameras."""
+
+    # The aloha gripper can be controlled in a continuous manner, so we set this to True.
+    # For more information on the gripper, check: https://github.com/TUM-LSY/aloha4franka
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(
+                find_config("gripper_left.yaml") or CRISP_CONFIG_PATH / "gripper_left.yaml"
+            ).resolve()
+        )
+    )
+    camera_configs: List[CameraConfig] = field(default_factory=lambda: [])
+
+    max_episode_steps: int | None = 1000
+
+
+@dataclass
+class LeftAlohaPandaEnvConfig(AlohaPandaEnvConfig):
+    """Custom Panda Gym Environment Configuration for the left robot with an Aloha gripper and cameras."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(
+                find_config("gripper_left.yaml") or CRISP_CONFIG_PATH / "gripper_left.yaml"
+            ).resolve()
+        )
+    )
+
+    camera_configs: List[CameraConfig] = field(
+        default_factory=lambda: [
+            CameraConfig(
+                camera_name="primary",
+                camera_frame="primary_link",
+                resolution=[256, 256],
+                camera_color_image_topic="/camera/third_person_camera/color/image_raw",
+                camera_color_info_topic="/camera/third_person_camera/color/camera_info",
+            ),
+            CameraConfig(
+                camera_name="wrist",
+                camera_frame="wrist_link",
+                resolution=[256, 256],
+                camera_color_image_topic="/camera/wrist_camera/color/image_raw",
+                camera_color_info_topic="/camera/wrist_camera/color/camera_info",
+            ),
+        ]
+    )
+
+
+@dataclass
+class RightAlohaPandaEnvConfig(AlohaPandaEnvConfig):
+    """Custom Panda Gym Environment Configuration for the right robot with an Aloha gripper and cameras."""
+
+    gripper_config: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(
+                find_config("gripper_right.yaml") or CRISP_CONFIG_PATH / "gripper_right.yaml"
+            ).resolve()
+        )
+    )
+
+    camera_configs: List[CameraConfig] = field(
+        default_factory=lambda: [
+            CameraConfig(
+                camera_name="primary",
+                camera_frame="primary_link",
+                resolution=[256, 256],
+                camera_color_image_topic="/camera/third_person_camera/color/image_raw",
+                camera_color_info_topic="/camera/third_person_camera/color/camera_info",
+            ),
+            CameraConfig(
+                camera_name="wrist",
+                camera_frame="wrist_link",
+                resolution=[256, 256],
+                camera_color_image_topic="/camera/wrist_camera/color/image_rect_raw",
+                camera_color_info_topic="/camera/wrist_camera/color/camera_info",
+            ),
+        ]
+    )
+
+
+@dataclass
 class NoCamNoGripperFrankaEnvConfig(FrankaEnvConfig):
     """Franka Gym Environment Configuration without cameras and gripper."""
 
@@ -583,6 +666,8 @@ def list_env_configs() -> list[str]:
 STRING_TO_CONFIG = {
     "right_aloha_franka": RightAlohaFrankaEnvConfig,
     "left_aloha_franka": LeftAlohaFrankaEnvConfig,
+    "right_aloha_panda": RightAlohaPandaEnvConfig,
+    "left_aloha_panda": LeftAlohaPandaEnvConfig,
     "franka": FrankaEnvConfig,
     "no_cam_franka": NoCamFrankaEnvConfig,
     "left_no_cam_franka": LeftNoCamFrankaEnvConfig,

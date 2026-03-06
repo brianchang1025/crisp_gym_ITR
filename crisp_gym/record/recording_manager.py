@@ -76,7 +76,7 @@ class RecordingManager(ABC):
             target=self._writer_proc,
             args=(),
             name="dataset_writer",
-            daemon=True,
+            daemon=False,
         )
         self.writer.start()
 
