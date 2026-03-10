@@ -39,7 +39,7 @@ def main():
         "--tasks",
         type=str,
         nargs="+",
-        default=["pick the lego block."],
+        default=["pick the brick."],
         help="List of task descriptions to record data for, e.g. 'clean red' 'clean green'",
     )
     parser.add_argument(
@@ -156,7 +156,7 @@ def main():
     if args.env_namespace is None:
         args.env_namespace = prompt.prompt(
             "Please enter the follower robot namespace (e.g., 'left', 'right', ...)",
-            default="right",
+            default="left",
         )
         logger.info(f"Using follower namespace: {args.env_namespace}")
 
@@ -165,7 +165,7 @@ def main():
         args.env_config = prompt.prompt(
             "Please enter the follower robot configuration name.",
             options=follower_configs,
-            default=follower_configs[0],
+            default=follower_configs[3],
         )
         logger.info(f"Using follower configuration: {args.env_config}")
 
@@ -174,7 +174,7 @@ def main():
         args.policy_config = prompt.prompt(
             "Please select the policy configuration to use.",
             options=policy_configs,
-            default=policy_configs[0],
+            default=policy_configs[2],
         )
 
     if args.evaluate:

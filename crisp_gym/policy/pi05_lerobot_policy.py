@@ -200,26 +200,6 @@ def inference_worker(
             obs_dict["observation.language.attention_mask"] = tokens["attention_mask"].bool()
             return obs_dict
 
-        def prepare_observation(obs_dict):
-            """Remaps environment keys to Pi05-Base expected keys."""
-            # Map Primary camera to Base_0
-            if "observation.images.primary" in obs_dict:
-                obs_dict["observation.images.base_0_rgb"] = obs_dict.pop("observation.images.primary")
-            
-            # Map Wrist camera to Left_Wrist
-            if "observation.images.wrist" in obs_dict:
-                obs_dict["observation.images.left_wrist_0_rgb"] = obs_dict.pop("observation.images.wrist")
-            
-            # CRITICAL: Pi05-Base expects a Right Wrist camera. 
-            # If your robot doesn't have one, we must provide a "fake" black image.
-            if "observation.images.right_wrist_0_rgb" not in obs_dict:
-                # Create a black tensor of the same shape/device/type as the left wrist
-                ref_img = obs_dict["observation.images.left_wrist_0_rgb"]
-                obs_dict["observation.images.right_wrist_0_rgb"] = torch.zeros_like(ref_img)
-                
-            return obs_dict
-
-       #warmup_obs = prepare_observation(warmup_obs)
         warmup_obs = add_language_instruction(warmup_obs, default_text)
 
         logger.info("[Pi05 Inference] Warming up policy...")
@@ -266,7 +246,6 @@ def inference_worker(
                 obs = numpy_obs_to_torch(msg)
                 
                 # ADD THIS LINE HERE:
-                #obs = prepare_observation(obs)
                 obs = add_language_instruction(obs, current_task)
                 
                 action = policy.select_action(obs)

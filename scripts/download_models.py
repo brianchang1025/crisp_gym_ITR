@@ -5,3 +5,7 @@ snapshot_download(
     repo_id="lerobot/pi05_base", 
     local_dir="./models/pi05_base",
 )
+snapshot_download(
+    repo_id="cbrian/pi05joint", 
+    local_dir="./models/pi05_joint",
+)
