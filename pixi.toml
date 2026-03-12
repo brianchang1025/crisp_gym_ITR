@@ -29,6 +29,7 @@ packaging = "<26.0"
 setuptools = "<81.0.0"
 ffmpeg = ">8"
 libgcc-ng = ">=13.2"
+#peft = "*"
 
 [target.linux.dependencies]
 libgl-devel = "*"
@@ -51,7 +52,7 @@ pynput = "*"
 #rerun-sdk = "=0.22.1"
 
 [feature.lerobot.pypi-dependencies]
-lerobot = { git = "https://github.com/huggingface/lerobot", extras = ["pi"]}
+lerobot = { git = "https://github.com/huggingface/lerobot", extras = ["pi", "peft"]}
 # === Working version ===
 #lerobot = { git = "https://github.com/huggingface/lerobot", rev = "dacd1d7f5c719c3e56d7b7154a751bef6d5bd23c", extras = ["smolvla"]}
 # === Newer version ===

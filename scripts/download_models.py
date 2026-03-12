@@ -2,10 +2,10 @@ from huggingface_hub import snapshot_download
 
 # This downloads the entire repo to a specific folder
 snapshot_download(
-    repo_id="lerobot/pi05_base", 
-    local_dir="./models/pi05_base",
+    repo_id="cbrian/pi05_picktheredscrew", 
+    local_dir="./models/pi05_picktheredscrew",
 )
-snapshot_download(
-    repo_id="cbrian/pi05joint", 
-    local_dir="./models/pi05_joint",
-)
+# snapshot_download(
+#     repo_id="cbrian/pi05joint", 
+#     local_dir="./models/pi05_joint",
+# )

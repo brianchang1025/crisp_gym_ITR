@@ -5,6 +5,7 @@ import datetime
 import logging
 from pathlib import Path
 import numpy as np
+import multiprocessing as mp
 
 import crisp_gym  # noqa: F401
 from crisp_gym.envs.manipulator_env import make_env
@@ -32,7 +33,7 @@ def main():
     parser.add_argument(
         "--robot-type",
         type=str,
-        default="franka",
+        default="panda",
         help="Type of robot being used.",
     )
     parser.add_argument(
@@ -279,4 +280,10 @@ def main():
 
 
 if __name__ == "__main__":
+    try:
+        mp.set_start_method('spawn', force=True)
+        logger = logging.getLogger(__name__)
+        logger.debug("Multiprocessing start method set to 'spawn'")
+    except RuntimeError:
+        pass
     main()

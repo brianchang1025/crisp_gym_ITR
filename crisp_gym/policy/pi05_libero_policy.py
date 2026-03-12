@@ -1,8 +1,8 @@
 """Interface for Pi05 Policy inference in CRISP."""
 
 import os
-# hide GPU from both main and spawned processes; prevents CUDA allocations
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# # hide GPU from both main and spawned processes; prevents CUDA allocations
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import json
 import gc
@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 inductor_config.triton.cudagraphs = False
 
 
-@register_policy("pi05_lerobot_policy")
-class Pi05LerobotPolicy(Policy):
+@register_policy("pi05_libero_policy")
+class Pi05LiberoPolicy(Policy):
     """A policy implementation for Pi05 that wraps a LeRobot policy for edge device inference.
 
     This class runs LeRobot policy inference in a separate process and communicates with the
@@ -97,7 +97,6 @@ class Pi05LerobotPolicy(Policy):
 
             self.parent_conn.send(obs_raw)
             action: Action = self.parent_conn.recv().squeeze(0).to("cpu").numpy()
-            # --- NEW: Save action to txt ---
             LOG_PATH = os.path.expanduser("~/crisp_gym_debug/crisp_gym_ITR/actions_log.txt")
 
             # Inside your _fn():
@@ -162,39 +161,29 @@ def inference_worker(
 
         logger.info(f"[Pi05 Inference] Loading training config from {pretrained_path}...")
 
-        train_config = TrainPipelineConfig.from_pretrained(pretrained_path)
+        # train_config = TrainPipelineConfig.from_pretrained(pretrained_path)
 
-        _check_dataset_metadata(train_config, env_metadata, logger)
+        # _check_dataset_metadata(train_config, env_metadata, logger)
 
-        logger.info("[Pi05 Inference] Loaded training config.")
+        # logger.info("[Pi05 Inference] Loaded training config.")
 
-        logger.debug(f"[Pi05 Inference] Train config: {train_config}")
+        # logger.debug(f"[Pi05 Inference] Train config: {train_config}")
 
-        if train_config.policy is None:
-            raise ValueError(
-                f"Policy configuration is missing in the pretrained path: {pretrained_path}. "
-                "Please ensure the policy is correctly configured."
-            )
-        logger.info(f"Loading PeftConfig from {pretrained_path}")
-        peft_config = PeftConfig.from_pretrained(pretrained_path)
-
+        # if train_config.policy is None:
+        #     raise ValueError(
+        #         f"Policy configuration is missing in the pretrained path: {pretrained_path}. "
+        #         "Please ensure the policy is correctly configured."
+        #     )
+    
         logger.info("[Pi05 Inference] Loading policy...")
         policy_cls = get_policy_class("pi05")
         logger.info("Step 1: Loading Base Model to RAM...")
-        logger.info(f"Loading Base Model: {peft_config.base_model_name_or_path}")
+
         policy = policy_cls.from_pretrained(
-            "./models/pi05_base",  # We load the base model from the local path where we downloaded it, not from the pretrained_path which is where the adapter is
+            pretrained_path,  # We load the base model from the local path where we downloaded it, not from the pretrained_path which is where the adapter is
             torch_dtype=torch.float32, 
             low_cpu_mem_usage=True,
-            device_map="cpu"
         )
-        logger.info("Base model loaded successfully")
-        # 2. Manually load the adapter config to verify it exists
-        logger.info(f"Step 2: Loading Adapter from {pretrained_path}")
-        # 3. Wrap the model
-        
-        policy = PeftModel.from_pretrained(policy, pretrained_path)
-        logger.info("Adapter loaded and model wrapped successfully")
 
         # policy.config.use_cuda_graphs = False  # Disable CUDA graphs for Pi05 inference
         # if hasattr(policy.config, "compile_model"):
@@ -206,9 +195,6 @@ def inference_worker(
             )
             setattr(policy.config, override_key, override_value)
 
-        logger.info(
-            f"[Pi05 Inference] Loaded {policy.name} policy with {pretrained_path} on device {device}."
-        )
         policy.reset()
         policy.to(device).eval()
 
@@ -232,7 +218,7 @@ def inference_worker(
                 return_tensors="pt",
                 padding="max_length",
                 truncation=True,
-                max_length=512
+                max_length=200
             ).to(device)
             obs_dict["observation.language.tokens"] = tokens["input_ids"]
             obs_dict["observation.language.attention_mask"] = tokens["attention_mask"].bool()

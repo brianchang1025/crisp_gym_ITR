@@ -40,7 +40,7 @@ def main():
     parser.add_argument(
         "--robot-type",
         type=str,
-        default="franka",
+        default="panda",
         help="Type of robot being used.",
     )
     parser.add_argument(
@@ -136,14 +136,14 @@ def main():
     if args.follower_namespace is None:
         args.follower_namespace = prompt.prompt(
             "Please enter the follower robot namespace (e.g., 'left', 'right', ...)",
-            default="right",
+            default="left",
         )
         logger.info(f"Using follower namespace: {args.follower_namespace}")
 
     if args.leader_namespace is None and not args.use_streamed_teleop:
         args.leader_namespace = prompt.prompt(
             "Please enter the leader robot namespace (e.g., 'left', 'right', ...)",
-            default="left",
+            default="right",
         )
         logger.info(f"Using leader namespace: {args.leader_namespace}")
 
@@ -152,7 +152,7 @@ def main():
         args.leader_config = prompt.prompt(
             "Please enter the leader robot configuration name.",
             options=leader_configs,
-            default=leader_configs[0],
+            default=leader_configs[1],
         )
         logger.info(f"Using leader configuration: {args.leader_config}")
 
@@ -161,7 +161,7 @@ def main():
         args.follower_config = prompt.prompt(
             "Please enter the follower robot configuration name.",
             options=follower_configs,
-            default=follower_configs[0],
+            default=follower_configs[3],
         )
         logger.info(f"Using follower configuration: {args.follower_config}")
 

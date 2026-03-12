@@ -79,7 +79,7 @@ class LerobotPolicy(Policy):
 
             self.parent_conn.send(obs_raw)
             action: Action = self.parent_conn.recv().squeeze(0).to("cpu").numpy()
-            logger.debug(f"Action: {action}")
+            logger.debug(f"Action: {action}") 
 
             try:
                 self.env.step(action, block=False)
