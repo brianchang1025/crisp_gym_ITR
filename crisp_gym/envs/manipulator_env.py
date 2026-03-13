@@ -303,11 +303,12 @@ class ManipulatorBaseEnv(gym.Env):
             )
             self._previous_rotation_vector = cartesian_pose[3:]
 
-        gripper_value = (
-            1 - np.array([self.gripper.value])
-            if self.config.gripper_mode != GripperMode.NONE
-            else np.array([0.0])
-        )
+        # gripper_value = (
+        #     1 - np.array([self.gripper.value])
+        #     if self.config.gripper_mode != GripperMode.NONE
+        #     else np.array([0.0])
+        # )
+        gripper_closing_state = self.gripper.closing_state() if self.config.gripper_mode != GripperMode.NONE is not None else False
 
         # Cartesian pose
         if ObservationKeys.CARTESIAN_OBS in self.config.observations_to_include_to_state:
@@ -315,7 +316,8 @@ class ManipulatorBaseEnv(gym.Env):
 
         # Gripper state
         if ObservationKeys.GRIPPER_OBS in self.config.observations_to_include_to_state:
-            obs[ObservationKeys.GRIPPER_OBS] = gripper_value.astype(np.float32)
+            #obs[ObservationKeys.GRIPPER_OBS] = gripper_value.astype(np.float32)
+            obs[ObservationKeys.GRIPPER_OBS] = np.array([gripper_closing_state], dtype=np.float32)
 
         # Joint state
         if ObservationKeys.JOINT_OBS in self.config.observations_to_include_to_state:

@@ -14,6 +14,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import torch
 from rich import print
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
@@ -64,46 +65,55 @@ def main():
 
         img = frame.get(img_key)
         if img is None:
-            # skip frames without image
             continue
 
-        # Convert C H W -> H W C if needed
-        try:
-            if img.ndim == 3 and img.shape[0] in (1, 3, 4):
-                img_disp = np.moveaxis(img, 0, -1)
-            else:
-                img_disp = img
-        except Exception:
+        # 1. Convert to Numpy IMMEDIATELY to avoid type mismatches
+        if torch.is_tensor(img):
+            img = img.detach().cpu().numpy()
+
+        # 2. Handle Dimension Ordering (PyTorch C,H,W -> OpenCV H,W,C)
+        if img.ndim == 3 and img.shape[0] in (1, 3, 4):
+            img_disp = np.transpose(img, (1, 2, 0))
+        else:
             img_disp = img
 
-        # Normalize or convert types for display
+        # 3. Normalize Safely
         if img_disp.dtype != np.uint8:
-            img_min, img_max = img_disp.min(), img_disp.max()
-            if img_max > img_min:
-                img_disp = ((img_disp - img_min) / (img_max - img_min) * 255.0).astype(np.uint8)
-            else:
-                img_disp = (img_disp * 255.0).astype(np.uint8)
+            img_min = img_disp.min().item()
+            img_max = img_disp.max().item()
+            
+            denom = max(img_max - img_min, 1e-6) # Prevent division by zero
+            img_disp = ((img_disp - img_min) / denom * 255.0).clip(0, 255).astype(np.uint8)
 
-        # Ensure color ordering is BGR for OpenCV (assume images are RGB)
+        # 4. Color Space Conversion (RGB -> BGR for OpenCV)
         if img_disp.ndim == 3 and img_disp.shape[2] == 3:
             img_display = cv2.cvtColor(img_disp, cv2.COLOR_RGB2BGR)
+        elif img_disp.ndim == 3 and img_disp.shape[2] == 1:
+            img_display = cv2.cvtColor(img_disp, cv2.COLOR_GRAY2BGR)
         else:
             img_display = img_disp
 
+        # 5. Action Text and Display
         action = frame.get("action")
         if action is not None:
-            action_text = np.array2string(np.asarray(action), precision=3, separator=", ")
+            if torch.is_tensor(action):
+                action = action.detach().cpu().numpy()
+            
+            # Check if any value is NaN
+            has_nan = np.isnan(action).any()
+            
+            # Format the string
+            action_text = np.array2string(action, precision=4, separator=", ")
+            
+            # Print to terminal with status
+            if has_nan:
+                print(f"[bold red][FRAME {frame.get('index', '??')}] ACTION CONTAINS NAN:[/bold red] {action_text}")
+            else:
+                print(f"[green][FRAME {frame.get('index', '??')}] Action:[/green] {action_text}")
         else:
-            action_text = "(no action)"
-
-        # Overlay action text on image
-        disp = img_display.copy()
-        try:
-            cv2.putText(disp, f"ep={ep} act={action_text}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
-        except Exception:
-            pass
-
-        cv2.imshow(window_name, disp)
+            print("[yellow]No action found for this frame[/yellow]")
+        
+        cv2.imshow(window_name, img_display)
 
         if args.step:
             k = cv2.waitKey(0) & 0xFF
