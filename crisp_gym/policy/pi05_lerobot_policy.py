@@ -1,8 +1,8 @@
 """Interface for Pi05 Policy inference in CRISP."""
 
 import os
-# hide GPU from both main and spawned processes; prevents CUDA allocations
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# # hide GPU from both main and spawned processes; prevents CUDA allocations
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import json
 import gc

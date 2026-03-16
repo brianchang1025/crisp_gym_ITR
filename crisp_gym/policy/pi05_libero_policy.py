@@ -5,12 +5,9 @@ import os
 # os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import json
-import gc
 import logging
-from multiprocessing import Pipe, Process
+from multiprocessing import Pipe
 from multiprocessing.connection import Connection
-from transformers import AutoTokenizer
-from peft import PeftConfig, PeftModel
 from pathlib import Path
 from typing import Any, Callable, Tuple
 
@@ -19,7 +16,7 @@ import multiprocessing as mp
 import torch
 import torch._inductor.config as inductor_config
 from lerobot.configs.train import TrainPipelineConfig
-from lerobot.policies.factory import LeRobotDatasetMetadata, get_policy_class
+from lerobot.policies.factory import LeRobotDatasetMetadata, get_policy_class, make_pre_post_processors
 from typing_extensions import override
 
 from crisp_gym.envs.manipulator_env import ManipulatorBaseEnv
@@ -168,19 +165,15 @@ def inference_worker(
 
         logger.info(f"[Pi05 Inference] Loading training config from {pretrained_path}...")
 
-        # train_config = TrainPipelineConfig.from_pretrained(pretrained_path)
-
-        # _check_dataset_metadata(train_config, env_metadata, logger)
-
-        # logger.info("[Pi05 Inference] Loaded training config.")
-
-        # logger.debug(f"[Pi05 Inference] Train config: {train_config}")
-
-        # if train_config.policy is None:
-        #     raise ValueError(
-        #         f"Policy configuration is missing in the pretrained path: {pretrained_path}. "
-        #         "Please ensure the policy is correctly configured."
-        #     )
+        train_config = TrainPipelineConfig.from_pretrained(pretrained_path)
+        _check_dataset_metadata(train_config, env_metadata, logger)
+        logger.info("[Pi05 Inference] Loaded training config.")
+        logger.debug(f"[Pi05 Inference] Train config: {train_config}")
+        if train_config.policy is None:
+            raise ValueError(
+                f"Policy configuration is missing in the pretrained path: {pretrained_path}. "
+                "Please ensure the policy is correctly configured."
+            )
     
         logger.info("[Pi05 Inference] Loading policy...")
         policy_cls = get_policy_class("pi05")
@@ -205,33 +198,19 @@ def inference_worker(
         policy.reset()
         policy.to(device).eval()
 
+        # Build processors so obs/action scaling follows policy.config.normalization_mapping
+        preprocessor, postprocessor = make_pre_post_processors(
+            policy_cfg=policy.config,
+            pretrained_path=pretrained_path,
+            preprocessor_overrides={"device_processor": {"device": device.type}},
+        )
+
         warmup_obs_raw = observation_space.sample()
         warmup_obs_raw["observation.state"] = concatenate_state_features(warmup_obs_raw)
-        warmup_obs = numpy_obs_to_torch(warmup_obs_raw)
-
-        # 2. MANUALLY LOAD THE TOKENIZER
-        # Since policy.tokenizer is missing, we load it from the same path
-        logger.info("[Pi05 Inference] Loading tokenizer...")
-        tokenizer = AutoTokenizer.from_pretrained(
-            "google/paligemma-3b-pt-224", 
-            trust_remote_code=True
-        )
         default_text = "complete the task"
-    # 3. Define a helper to tokenize text
-        def add_language_instruction(obs_dict, text):
-            # Pi0 policies have a built-in tokenizer
-            tokens = tokenizer(
-                text,
-                return_tensors="pt",
-                padding="max_length",
-                truncation=True,
-                max_length=200
-            ).to(device)
-            obs_dict["observation.language.tokens"] = tokens["input_ids"]
-            obs_dict["observation.language.attention_mask"] = tokens["attention_mask"].bool()
-            return obs_dict
-
-        warmup_obs = add_language_instruction(warmup_obs, default_text)
+        warmup_obs = numpy_obs_to_torch(warmup_obs_raw)
+        warmup_obs["task"] = default_text
+        warmup_obs = preprocessor(warmup_obs)
 
         logger.info("[Pi05 Inference] Warming up policy...")
         elapsed_list = []
@@ -274,15 +253,15 @@ def inference_worker(
                 continue
 
             with torch.inference_mode():
-                obs = numpy_obs_to_torch(msg)
-                
-                # ADD THIS LINE HERE:
-                obs = add_language_instruction(obs, current_task)
-                
-                action = policy.select_action(obs)
+                obs_with_task = numpy_obs_to_torch(msg)
+                obs_with_task["task"] = current_task
 
+                obs = preprocessor(obs_with_task)
+
+                action = policy.select_action(obs)
+                action = postprocessor(action)
             # log computed action for visibility
-            logger.info(f"[Pi05 Inference] Computed action: {action}")
+            #logger.info(f"[Pi05 Inference] Computed action: {action}")
             conn.send(action)
     except Exception as e:
         logger.exception(f"[Pi05 Inference] Exception in inference worker: {e}")

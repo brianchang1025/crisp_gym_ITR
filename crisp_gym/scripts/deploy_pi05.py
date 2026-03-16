@@ -229,6 +229,7 @@ def main():
 
         def on_start():
             """Hook function to be called when starting a new episode."""
+            env.robot.reset_targets()
             env.reset()
             policy.reset()
             evaluator.start_timer()

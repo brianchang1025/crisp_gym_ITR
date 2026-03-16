@@ -1,134 +1,331 @@
-"""Simple dataset replay utility for LeRobotDataset.
+#!/usr/bin/env python
 
-Usage:
-    python scripts/replay_dataset.py --repo-id username/dataset_name
+# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+""" Visualize data of **all** frames of any episode of a dataset of type LeRobotDataset.
 
-The script shows the first available image feature (e.g. observation.images.front)
-and prints the action vector and episode index. Use `q` to quit, `n` to advance
-one frame when in step mode, or run continuously at the dataset FPS.
+Note: The last frame of the episode doesn't always correspond to a final state.
+That's because our datasets are composed of transition from state to state up to
+the antepenultimate state associated to the ultimate action to arrive in the final state.
+However, there might not be a transition from a final state to another state.
+
+Note: This script aims to visualize the data used to train the neural networks.
+~What you see is what you get~. When visualizing image modality, it is often expected to observe
+lossy compression artifacts since these images have been decoded from compressed mp4 videos to
+save disk space. The compression factor applied has been tuned to not affect success rate.
+
+Examples:
+
+- Visualize data stored on a local machine:
+```
+local$ lerobot-dataset-viz \
+    --repo-id lerobot/pusht \
+    --episode-index 0
+```
+
+- Visualize data stored on a distant machine with a local viewer:
+```
+distant$ lerobot-dataset-viz \
+    --repo-id lerobot/pusht \
+    --episode-index 0 \
+    --save 1 \
+    --output-dir path/to/directory
+
+local$ scp distant:path/to/directory/lerobot_pusht_episode_0.rrd .
+local$ rerun lerobot_pusht_episode_0.rrd
+```
+
+- Visualize data stored on a distant machine through streaming:
+```
+distant$ lerobot-dataset-viz \
+    --repo-id lerobot/pusht \
+    --episode-index 0 \
+    --mode distant \
+    --grpc-port 9876
+
+local$ rerun rerun+http://IP:GRPC_PORT/proxy
+```
+
 """
 
 import argparse
+import gc
+import logging
 import time
 from pathlib import Path
 
-import cv2
 import numpy as np
+import rerun as rr
 import torch
-from rich import print
+import torch.utils.data
+import tqdm
 
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
+from lerobot.utils.constants import ACTION, DONE, OBS_STATE, REWARD
+from lerobot.utils.utils import init_logging
+
+
+def to_hwc_uint8_numpy(chw_float32_torch: torch.Tensor) -> np.ndarray:
+    assert chw_float32_torch.dtype == torch.float32
+    assert chw_float32_torch.ndim == 3
+    c, h, w = chw_float32_torch.shape
+    assert c < h and c < w, f"expect channel first images, but instead {chw_float32_torch.shape}"
+    hwc_uint8_numpy = (chw_float32_torch * 255).type(torch.uint8).permute(1, 2, 0).numpy()
+    return hwc_uint8_numpy
+
+
+def visualize_dataset(
+    dataset: LeRobotDataset,
+    episode_index: int | None = None,
+    batch_size: int = 32,
+    num_workers: int = 0,
+    mode: str = "local",
+    web_port: int = 9090,
+    grpc_port: int = 9876,
+    save: bool = False,
+    output_dir: Path | None = None,
+    display_compressed_images: bool = False,
+    **kwargs,
+) -> Path | None:
+    if save:
+        assert output_dir is not None, (
+            "Set an output directory where to write .rrd files with `--output-dir path/to/directory`."
+        )
+
+    repo_id = dataset.repo_id
+
+    logging.info("Loading dataloader")
+    dataloader = torch.utils.data.DataLoader(
+        dataset,
+        num_workers=num_workers,
+        batch_size=batch_size,
+    )
+
+    logging.info("Starting Rerun")
+
+    if mode not in ["local", "distant"]:
+        raise ValueError(mode)
+
+    spawn_local_viewer = mode == "local" and not save
+    run_name = f"{repo_id}/episode_{episode_index}" if episode_index is not None else f"{repo_id}/all_episodes"
+    rr.init(run_name, spawn=spawn_local_viewer)
+
+    # Manually call python garbage collector after `rr.init` to avoid hanging in a blocking flush
+    # when iterating on a dataloader with `num_workers` > 0
+    # TODO(rcadene): remove `gc.collect` when rerun version 0.16 is out, which includes a fix
+    gc.collect()
+
+    if mode == "distant":
+        server_uri = rr.serve_grpc(grpc_port=grpc_port)
+        logging.info(f"Connect to a Rerun Server: rerun rerun+http://IP:{grpc_port}/proxy")
+        rr.serve_web_viewer(open_browser=False, web_port=web_port, connect_to=server_uri)
+
+    logging.info("Logging to Rerun")
+
+    first_index = None
+    for batch in tqdm.tqdm(dataloader, total=len(dataloader)):
+        if first_index is None:
+            first_index = batch["index"][0].item()
+        # iterate over the batch
+        for i in range(len(batch["index"])):
+            rr.set_time("frame_index", sequence=batch["index"][i].item() - first_index)
+            rr.set_time("timestamp", timestamp=batch["timestamp"][i].item())
+
+            # display each camera image
+            for key in dataset.meta.camera_keys:
+                img = to_hwc_uint8_numpy(batch[key][i])
+                img_entity = rr.Image(img).compress() if display_compressed_images else rr.Image(img)
+                rr.log(key, entity=img_entity)
+
+            # display each dimension of action space (e.g. actuators command)
+            if ACTION in batch:
+                for dim_idx, val in enumerate(batch[ACTION][i]):
+                    rr.log(f"{ACTION}/{dim_idx}", rr.Scalars(val.item()))
+
+            # display each dimension of observed state space (e.g. agent position in joint space)
+            if OBS_STATE in batch:
+                for dim_idx, val in enumerate(batch[OBS_STATE][i]):
+                    rr.log(f"state/{dim_idx}", rr.Scalars(val.item()))
+
+            if DONE in batch:
+                rr.log(DONE, rr.Scalars(batch[DONE][i].item()))
+
+            if REWARD in batch:
+                rr.log(REWARD, rr.Scalars(batch[REWARD][i].item()))
+
+            if "next.success" in batch:
+                rr.log("next.success", rr.Scalars(batch["next.success"][i].item()))
+
+    if mode == "local" and save:
+        # save .rrd locally
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        repo_id_str = repo_id.replace("/", "_")
+        suffix = f"episode_{episode_index}" if episode_index is not None else "all_episodes"
+        rrd_path = output_dir / f"{repo_id_str}_{suffix}.rrd"
+        rr.save(rrd_path)
+        return rrd_path
+
+    elif mode == "distant":
+        # stop the process from exiting since it is serving the websocket connection
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("Ctrl-C received. Exiting.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Replay a LeRobotDataset")
-    parser.add_argument("--repo-id", required=True, help="HuggingFace repo id of the dataset")
-    parser.add_argument("--fps", type=int, default=None, help="Playback fps (defaults to dataset fps)")
-    parser.add_argument("--step", action="store_true", help="Step through frames with 'n' key")
-    parser.add_argument("--image-key", type=str, default=None, help="Exact image feature key to display")
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--repo-id",
+        type=str,
+        default=None,
+        help="Name of hugging face repository containing a LeRobotDataset dataset (e.g. `lerobot/pusht`).",
+    )
+    parser.add_argument(
+        "--episode-index",
+        "--episode",
+        type=int,
+        default=None,
+        help="Episode to visualize. If not set, defaults to episode 0.",
+    )
+    parser.add_argument(
+        "--root",
+        type=Path,
+        default=None,
+        help="Root directory for the dataset stored locally (e.g. `--root data`). By default, the dataset will be loaded from hugging face cache folder, or downloaded from the hub if available.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Directory path to write a .rrd file when `--save 1` is set.",
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=32,
+        help="Batch size loaded by DataLoader.",
+    )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=4,
+        help="Number of processes of Dataloader for loading the data.",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        default="local",
+        help=(
+            "Mode of viewing between 'local' or 'distant'. "
+            "'local' requires data to be on a local machine. It spawns a viewer to visualize the data locally. "
+            "'distant' creates a server on the distant machine where the data is stored. "
+            "Visualize the data by connecting to the server with `rerun rerun+http://IP:GRPC_PORT/proxy` on the local machine."
+        ),
+    )
+    parser.add_argument(
+        "--web-port",
+        type=int,
+        default=9090,
+        help="Web port for rerun.io when `--mode distant` is set.",
+    )
+    parser.add_argument(
+        "--ws-port",
+        type=int,
+        help="deprecated, please use --grpc-port instead.",
+    )
+    parser.add_argument(
+        "--grpc-port",
+        type=int,
+        default=9876,
+        help="gRPC port for rerun.io when `--mode distant` is set.",
+    )
+    parser.add_argument(
+        "--save",
+        type=int,
+        default=0,
+        help=(
+            "Save a .rrd file in the directory provided by `--output-dir`. "
+            "It also deactivates the spawning of a viewer. "
+            "Visualize the data by running `rerun path/to/file.rrd` on your local machine."
+        ),
+    )
+
+    parser.add_argument(
+        "--tolerance-s",
+        type=float,
+        default=1e-4,
+        help=(
+            "Tolerance in seconds used to ensure data timestamps respect the dataset fps value"
+            "This is argument passed to the constructor of LeRobotDataset and maps to its tolerance_s constructor argument"
+            "If not given, defaults to 1e-4."
+        ),
+    )
+
+    parser.add_argument(
+        "--display-compressed-images",
+        action="store_true",
+        help="If set, display compressed images in Rerun instead of uncompressed ones.",
+    )
+
     args = parser.parse_args()
+    kwargs = vars(args)
+    repo_id = kwargs.pop("repo_id")
+    root = kwargs.pop("root")
+    tolerance_s = kwargs.pop("tolerance_s")
 
-    ds = LeRobotDataset(repo_id=args.repo_id)
-    print(f"Loaded dataset: {args.repo_id}")
-    print(f"Total episodes (meta): {ds.meta.total_episodes if hasattr(ds, 'meta') else 'unknown'}")
+    if kwargs["ws_port"] is not None:
+        logging.warning(
+            "--ws-port is deprecated and will be removed in future versions. Please use --grpc-port instead."
+        )
+        logging.warning("Setting grpc_port to ws_port value.")
+        kwargs["grpc_port"] = kwargs.pop("ws_port")
 
-    # Detect image keys
-    image_keys = [k for k in ds.features.keys() if k.startswith("observation.images")]
-    if not image_keys:
-        print("[red]No image features found in dataset. Available features:[/red]")
-        for k in ds.features.keys():
-            print(f" - {k}")
-        return
+    init_logging()
 
-    if args.image_key:
-        if args.image_key not in image_keys:
-            print(f"[red]Requested image key '{args.image_key}' not found. Available: {image_keys}[/red]")
-            return
-        img_key = args.image_key
+    if repo_id is None:
+        repo_id_input = input(
+            "Please enter repo id (e.g. cbrian/dataset_picktheredscrew_cartesian): "
+        ).strip()
+        if not repo_id_input:
+            raise ValueError("repo-id is required")
+        repo_id = repo_id_input
+
+    if args.episode_index is None:
+        ep_input = input("Episode index (default: 0, type 'all' for all episodes): ").strip().lower()
+        if ep_input == "" or ep_input == "0":
+            args.episode_index = 0
+        elif ep_input == "all":
+            args.episode_index = None
+        else:
+            args.episode_index = int(ep_input)
+
+    logging.info("Loading dataset")
+    if args.episode_index is None:
+        dataset = LeRobotDataset(repo_id, root=root, tolerance_s=tolerance_s)
     else:
-        img_key = image_keys[0]
+        dataset = LeRobotDataset(
+            repo_id,
+            episodes=[args.episode_index],
+            root=root,
+            tolerance_s=tolerance_s,
+        )
 
-    print(f"Displaying image feature: {img_key}")
-
-    playback_fps = args.fps if args.fps is not None else getattr(ds, "fps", 15)
-    delay_ms = max(1, int(1000.0 / playback_fps))
-
-    last_episode = -1
-    window_name = f"replay: {Path(args.repo_id).name} - {img_key}"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-
-    for frame in ds:
-        ep = int(frame.get("episode_index", 0))
-        if ep != last_episode:
-            print(f"\n--- Episode {ep} --- task: {frame.get('task','')} \n")
-            last_episode = ep
-
-        img = frame.get(img_key)
-        if img is None:
-            continue
-
-        # 1. Convert to Numpy IMMEDIATELY to avoid type mismatches
-        if torch.is_tensor(img):
-            img = img.detach().cpu().numpy()
-
-        # 2. Handle Dimension Ordering (PyTorch C,H,W -> OpenCV H,W,C)
-        if img.ndim == 3 and img.shape[0] in (1, 3, 4):
-            img_disp = np.transpose(img, (1, 2, 0))
-        else:
-            img_disp = img
-
-        # 3. Normalize Safely
-        if img_disp.dtype != np.uint8:
-            img_min = img_disp.min().item()
-            img_max = img_disp.max().item()
-            
-            denom = max(img_max - img_min, 1e-6) # Prevent division by zero
-            img_disp = ((img_disp - img_min) / denom * 255.0).clip(0, 255).astype(np.uint8)
-
-        # 4. Color Space Conversion (RGB -> BGR for OpenCV)
-        if img_disp.ndim == 3 and img_disp.shape[2] == 3:
-            img_display = cv2.cvtColor(img_disp, cv2.COLOR_RGB2BGR)
-        elif img_disp.ndim == 3 and img_disp.shape[2] == 1:
-            img_display = cv2.cvtColor(img_disp, cv2.COLOR_GRAY2BGR)
-        else:
-            img_display = img_disp
-
-        # 5. Action Text and Display
-        action = frame.get("action")
-        if action is not None:
-            if torch.is_tensor(action):
-                action = action.detach().cpu().numpy()
-            
-            # Check if any value is NaN
-            has_nan = np.isnan(action).any()
-            
-            # Format the string
-            action_text = np.array2string(action, precision=4, separator=", ")
-            
-            # Print to terminal with status
-            if has_nan:
-                print(f"[bold red][FRAME {frame.get('index', '??')}] ACTION CONTAINS NAN:[/bold red] {action_text}")
-            else:
-                print(f"[green][FRAME {frame.get('index', '??')}] Action:[/green] {action_text}")
-        else:
-            print("[yellow]No action found for this frame[/yellow]")
-        
-        cv2.imshow(window_name, img_display)
-
-        if args.step:
-            k = cv2.waitKey(0) & 0xFF
-        else:
-            k = cv2.waitKey(delay_ms) & 0xFF
-
-        if k == ord("q"):
-            break
-        if args.step and k != ord("n"):
-            # wait until 'n' or 'q' is pressed
-            if k == ord("q"):
-                break
-            continue
-
-    cv2.destroyAllWindows()
+    visualize_dataset(dataset, **vars(args))
 
 
 if __name__ == "__main__":
