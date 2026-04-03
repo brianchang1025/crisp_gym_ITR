@@ -11,3 +11,7 @@ pixi.lock
 outputs/
 models/
 crisp.log
+gripperaction_log.txt
+actions_log.txt 
+obs_log.txt
+merged_output/

@@ -102,11 +102,11 @@ class Pi05LiberoPolicy(Policy):
             self.parent_conn.send(obs_raw)
             action: Action = self.parent_conn.recv().squeeze(0).to("cpu").numpy()
 
-            LOG_PATH = os.path.expanduser("~/crisp_gym_debug/crisp_gym_ITR/actions_log.txt")
+            LOG_PATH = os.path.expanduser("~/crisp_gym_debug/crisp_gym_ITR/gripperaction_log.txt")
             # Inside your _fn():
             with open(LOG_PATH, "a") as f:
-                action_str = ",".join(map(str, action.flatten()))
-                f.write(f"{action_str}\n")
+                action_last = np.asarray(action).reshape(-1)[-1]
+                f.write(f"{action_last}\n")
                 f.flush()  # Force the OS to write to disk immediately
             #logger.debug(f"Action: {action}")
 

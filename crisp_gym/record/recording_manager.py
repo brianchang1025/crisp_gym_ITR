@@ -182,6 +182,9 @@ class RecordingManager(ABC):
                     #dataset.set_task(task)
                     # Build frame directly from observation using feature-based approach
                     frame = {"action": action.astype(np.float32)}
+                    
+                    
+                    
                     frame["task"] = task
                     # Add all observation features that match our dataset features
                     for feature_name in self.config.features:
