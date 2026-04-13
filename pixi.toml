@@ -51,6 +51,7 @@ pudb = ">=2025.1.3, <2026"
 pynput = "*"
 #rerun-sdk = "=0.22.1"
 
+
 [feature.lerobot.pypi-dependencies]
 lerobot = { git = "https://github.com/huggingface/lerobot", extras = ["pi", "peft"]}
 # === Working version ===
