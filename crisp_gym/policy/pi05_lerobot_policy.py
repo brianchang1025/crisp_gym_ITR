@@ -10,7 +10,7 @@ import logging
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from transformers import AutoTokenizer
-from peft import PeftConfig, PeftModel
+
 from pathlib import Path
 from typing import Any, Callable, Tuple
 
