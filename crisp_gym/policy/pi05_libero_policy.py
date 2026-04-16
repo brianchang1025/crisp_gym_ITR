@@ -176,7 +176,7 @@ def inference_worker(
             )
     
         logger.info("[Pi05 Inference] Loading policy...")
-        policy_cls = get_policy_class("pi05")
+        policy_cls = get_policy_class(train_config.policy.type)
         logger.info("Step 1: Loading Base Model to RAM...")
 
         policy = policy_cls.from_pretrained(

@@ -175,7 +175,7 @@ def main():
         args.policy_config = prompt.prompt(
             "Please select the policy configuration to use.",
             options=policy_configs,
-            default=policy_configs[2],
+            default=policy_configs[1],
         )
 
     if args.evaluate:
