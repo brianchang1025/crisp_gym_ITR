@@ -40,9 +40,9 @@ def get_features(
         use_video (bool): Whether to include video features. Defaults to True.
         ignore_keys (list[str], optional): List of observation keys to ignore. Defaults to None.
     """
-    if not CODEBASE_VERSION.startswith("v2"):
+    if not CODEBASE_VERSION.startswith("v3"):
         logger.warning(
-            "Feature generation for LeRobot has been implemented for version 2.x of LeRobotDataset. Expect unexpected behaviour for other versions."
+            "Feature generation for LeRobot has been implemented for version 3.x of LeRobotDataset. Expect unexpected behaviour for other versions."
         )
 
     ctrl_dims: dict[ControlType, list[str]] = {
