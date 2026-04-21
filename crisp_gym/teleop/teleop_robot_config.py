@@ -78,7 +78,7 @@ class TeleopRobotConfig(ABC):
 
 
 @dataclass
-class LeftAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
+class LeftPandaTeleopRobotConfig(TeleopRobotConfig):
     """Configuration for the left robot as a leader."""
 
     leader: RobotConfig = field(default_factory=lambda: PandaConfig())
@@ -97,7 +97,7 @@ class LeftAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
 
 
 @dataclass
-class RightAlohaFrankaTeleopRobotConfig(TeleopRobotConfig):
+class RightPandaTeleopRobotConfig(TeleopRobotConfig):
     """Configuration for the right robot as a leader."""
 
     leader: RobotConfig = field(default_factory=lambda: PandaConfig())

@@ -1,5 +1,0 @@
-            # Inside your _fn():
-            with open(LOG_PATH, "a") as f:
-                action_str = ",".join(map(str, action.flatten()))
-                f.write(f"{action_str}\n")
-                f.flush()  # Force the OS to write to disk immediately

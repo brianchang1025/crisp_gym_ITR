@@ -291,42 +291,6 @@ class FrankaEnvConfig(ManipulatorEnvConfig, ABC):
     )
 
 
-@dataclass
-class NoCamFrankaEnvConfig(FrankaEnvConfig):
-    """Franka Gym Environment Configuration."""
-
-    gripper_config: GripperConfig | None = field(
-        default_factory=lambda: GripperConfig(min_value=0, max_value=1)
-    )
-
-    camera_configs: List[CameraConfig] = field(default_factory=lambda: [])
-
-
-@dataclass
-class LeftNoCamFrankaEnvConfig(NoCamFrankaEnvConfig):
-    """Franka Gym Environment Configuration for the left robot without cameras."""
-
-    gripper_config: GripperConfig | None = field(
-        default_factory=lambda: GripperConfig.from_yaml(
-            path=(
-                find_config("gripper_left.yaml") or CRISP_CONFIG_PATH / "gripper_left.yaml"
-            ).resolve()
-        )
-    )
-
-
-@dataclass
-class RightNoCamFrankaEnvConfig(NoCamFrankaEnvConfig):
-    """Franka Gym Environment Configuration for the right robot without cameras."""
-
-    gripper_config: GripperConfig | None = field(
-        default_factory=lambda: GripperConfig.from_yaml(
-            path=(
-                find_config("gripper_right.yaml") or CRISP_CONFIG_PATH / "gripper_right.yaml"
-            ).resolve()
-        )
-    )
-
 @dataclass(kw_only=True)
 class PandaEnvConfig(ManipulatorEnvConfig, ABC):
     """Franka Gym Environment Configuration."""
@@ -379,33 +343,6 @@ class RightNoCamPandaEnvConfig(NoCamPandaEnvConfig):
                 find_config("gripper_right.yaml") or CRISP_CONFIG_PATH / "gripper_right.yaml"
             ).resolve()
         )
-    )
-
-@dataclass
-class OnlyWristCamFrankaEnvConfig(FrankaEnvConfig):
-    """Franka Gym Environment Configuration."""
-
-    gripper_config: GripperConfig | None = field(
-        default_factory=lambda: GripperConfig(
-            min_value=0,
-            max_value=1,
-            command_topic="gripper/gripper_position_controller/commands",
-            joint_state_topic="gripper/joint_states",
-            reboot_service="gripper/reboot_gripper",
-            enable_torque_service="gripper/dynamixel_hardware_interface/set_dxl_torque",
-        )
-    )
-
-    camera_configs: List[CameraConfig] = field(
-        default_factory=lambda: [
-            CameraConfig(
-                camera_name="camera",
-                camera_frame="wrist_link",
-                resolution=[256, 256],
-                camera_color_image_topic="camera/wrist_camera/color/image_rect_raw",
-                camera_color_info_topic="camera/wrist_camera/color/camera_info",
-            ),
-        ]
     )
 
 @dataclass
@@ -517,7 +454,7 @@ class RightAlohaFrankaEnvConfig(AlohaFrankaEnvConfig):
 
 
 @dataclass
-class AlohaPandaEnvConfig(PandaEnvConfig):
+class FrankaGripperPandaEnvConfig(PandaEnvConfig):
     """Custom Panda Gym Environment Configuration for Panda with an Aloha gripper and cameras."""
 
     # The aloha gripper can be controlled in a continuous manner, so we set this to True.
@@ -536,7 +473,7 @@ class AlohaPandaEnvConfig(PandaEnvConfig):
 
 
 @dataclass
-class LeftAlohaPandaEnvConfig(AlohaPandaEnvConfig):
+class LeftPandaEnvConfig(FrankaGripperPandaEnvConfig):
     """Custom Panda Gym Environment Configuration for the left robot with an Aloha gripper and cameras."""
 
     gripper_config: GripperConfig | None = field(
@@ -568,7 +505,7 @@ class LeftAlohaPandaEnvConfig(AlohaPandaEnvConfig):
 
 
 @dataclass
-class RightAlohaPandaEnvConfig(AlohaPandaEnvConfig):
+class RightPandaEnvConfig(FrankaGripperPandaEnvConfig):
     """Custom Panda Gym Environment Configuration for the right robot with an Aloha gripper and cameras."""
 
     gripper_config: GripperConfig | None = field(
@@ -598,17 +535,6 @@ class RightAlohaPandaEnvConfig(AlohaPandaEnvConfig):
         ]
     )
 
-
-@dataclass
-class NoCamNoGripperFrankaEnvConfig(FrankaEnvConfig):
-    """Franka Gym Environment Configuration without cameras and gripper."""
-
-    gripper_config: GripperConfig | None = field(
-        default_factory=lambda: GripperConfig(min_value=0, max_value=1)
-    )
-    camera_configs: List[CameraConfig] = field(default_factory=lambda: [])
-
-    gripper_mode: GripperMode | str = GripperMode.NONE
 
 @dataclass
 class NoCamNoGripperPandaEnvConfig(PandaEnvConfig):
@@ -666,14 +592,9 @@ def list_env_configs() -> list[str]:
 STRING_TO_CONFIG = {
     "right_aloha_franka": RightAlohaFrankaEnvConfig,
     "left_aloha_franka": LeftAlohaFrankaEnvConfig,
-    "right_aloha_panda": RightAlohaPandaEnvConfig,
-    "left_aloha_panda": LeftAlohaPandaEnvConfig,
+    "right_aloha_panda": RightPandaEnvConfig,
+    "left_aloha_panda": LeftPandaEnvConfig,
     "franka": FrankaEnvConfig,
-    "no_cam_franka": NoCamFrankaEnvConfig,
-    "left_no_cam_franka": LeftNoCamFrankaEnvConfig,
-    "right_no_cam_franka": RightNoCamFrankaEnvConfig,
-    "only_wrist_cam_franka": OnlyWristCamFrankaEnvConfig,
-    "no_cam_no_gripper_franka": NoCamNoGripperFrankaEnvConfig,
     "panda": PandaEnvConfig,
     "no_cam_panda": NoCamPandaEnvConfig,
     "left_no_cam_panda": LeftNoCamPandaEnvConfig,
