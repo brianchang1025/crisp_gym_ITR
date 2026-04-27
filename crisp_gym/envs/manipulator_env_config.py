@@ -592,8 +592,8 @@ def list_env_configs() -> list[str]:
 STRING_TO_CONFIG = {
     "right_aloha_franka": RightAlohaFrankaEnvConfig,
     "left_aloha_franka": LeftAlohaFrankaEnvConfig,
-    "right_aloha_panda": RightPandaEnvConfig,
-    "left_aloha_panda": LeftPandaEnvConfig,
+    "right_frankagripper_panda": RightPandaEnvConfig,
+    "left_frankagripper_panda": LeftPandaEnvConfig,
     "franka": FrankaEnvConfig,
     "panda": PandaEnvConfig,
     "no_cam_panda": NoCamPandaEnvConfig,

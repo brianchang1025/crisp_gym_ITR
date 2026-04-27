@@ -186,8 +186,8 @@ def list_leader_configs() -> list[str]:
 
 
 STRING_TO_CONFIG = {
-    "left_aloha_franka": LeftAlohaFrankaTeleopRobotConfig,
-    "right_aloha_franka": RightAlohaFrankaTeleopRobotConfig,
+    "left_panda": LeftPandaTeleopRobotConfig,
+    "right_panda": RightPandaTeleopRobotConfig,
     "no_gripper": NoGripperTeleopRobotConfig,
     "right_no_gripper": RightNoGripperTeleopRobotConfig,
     "left_no_gripper": LeftNoGripperTeleopRobotConfig,

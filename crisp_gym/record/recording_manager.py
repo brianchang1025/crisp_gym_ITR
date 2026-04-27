@@ -417,7 +417,11 @@ class ROSRecordingManager(RecordingManager):
         executor = SingleThreadedExecutor()
         executor.add_node(self.node)
         while rclpy.ok():
-            executor.spin_once(timeout_sec=0.1)
+            try:
+                executor.spin_once(timeout_sec=0.1)
+            except Exception as e:
+                logger.error(f"Error in ROS2 executor spin: {e}")
+                break
 
     @override
     def get_instructions(self) -> str:

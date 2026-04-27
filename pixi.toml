@@ -39,7 +39,6 @@ libgl-devel = "*"
 dev = { features = ["dev"] }
 jazzy = { features = ["jazzy"] }
 # The separated environments
-
 jazzy-pi05 = { features = ["jazzy", "lerobot-pi05", "dev"] }
 jazzy-groot = { features = ["jazzy", "lerobot-groot", "dev"] }
 
