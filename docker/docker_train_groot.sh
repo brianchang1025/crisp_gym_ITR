@@ -3,26 +3,22 @@
 # replace with your dataset repo e.g. cbrian/pi05_test_dataset
 DATASET_REPO=username/dataset_repo_name
 # replace with your output directory e.g. outputs/pi05_test_training
-# NOTE: Keep "outputs/" prefix, only change the folder name after it
-OUTPUT_DIR=outputs/output_folder_name
+# NOTE: Keep "/workspace/outputs/" prefix, only change the folder name after it
+OUTPUT_DIR=/workspaceoutputs/output_folder_name
 # replace with your job name e.g. pi05_test_job
 JOB_NAME=jobname
 # replace with your policy repo e.g. cbrian/pi05_test_trained_policy
-POLICY_REPO=username/policy_name
+POLICY_REPO=username/policy_repo_name
 
-pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train \
+lerobot-train \
     --dataset.repo_id="$DATASET_REPO" \
-    --policy.type=pi05 \
+    --policy.type=groot \
     --output_dir="$OUTPUT_DIR" \
     --job_name="$JOB_NAME" \
     --policy.repo_id="$POLICY_REPO" \
-    --policy.pretrained_path=lerobot/pi05_libero \
-    --policy.compile_model=false \
-    --policy.gradient_checkpointing=true \
     --wandb.enable=true \
-    --policy.dtype=bfloat16 \
-    --policy.freeze_vision_encoder=false \
-    --policy.train_expert_only=true \
+    --wandb.disable_artifact=true \
+    --policy.tune_diffusion_model=false \
     --steps=1000 \
     --policy.device=cuda:0 \
     --batch_size=32 \
@@ -30,5 +26,6 @@ pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train \
     --eval.n_episodes 50 \
     --save_checkpoint true \
     --save_freq 500 \
+    --log_freq=100 \
 
 # Use pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train --help to see all available options and their descriptions.

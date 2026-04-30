@@ -3,14 +3,14 @@
 # replace with your dataset repo e.g. cbrian/pi05_test_dataset
 DATASET_REPO=username/dataset_repo_name
 # replace with your output directory e.g. outputs/pi05_test_training
-# NOTE: Keep "outputs/" prefix, only change the folder name after it
-OUTPUT_DIR=outputs/output_folder_name
+# NOTE: Keep "/workspace/outputs/" prefix, only change the folder name after it
+OUTPUT_DIR=/workspace/outputs/output_folder_name
 # replace with your job name e.g. pi05_test_job
 JOB_NAME=jobname
 # replace with your policy repo e.g. cbrian/pi05_test_trained_policy
 POLICY_REPO=username/policy_name
 
-pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train \
+lerobot-train \
     --dataset.repo_id="$DATASET_REPO" \
     --policy.type=pi05 \
     --output_dir="$OUTPUT_DIR" \

@@ -3,6 +3,7 @@
 # replace with your dataset repo e.g. cbrian/pi05_test_dataset
 DATASET_REPO=username/dataset_repo_name
 # replace with your output directory e.g. outputs/pi05_test_training
+# NOTE: Keep "outputs/" prefix, only change the folder name after it
 OUTPUT_DIR=outputs/output_folder_name
 # replace with your job name e.g. pi05_test_job
 JOB_NAME=jobname
@@ -25,5 +26,6 @@ pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train \
     --eval.n_episodes 50 \
     --save_checkpoint true \
     --save_freq 500 \
+    --log_freq=100 \
 
 # Use pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train --help to see all available options and their descriptions.

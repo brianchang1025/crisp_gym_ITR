@@ -38,7 +38,7 @@ libgl-devel = "*"
 [environments]
 dev = { features = ["dev"] }
 jazzy = { features = ["jazzy"] }
-# The separated environments
+jazzy-lerobot = { features = ["jazzy", "lerobot", "dev"]}
 jazzy-pi05 = { features = ["jazzy", "lerobot-pi05", "dev"] }
 jazzy-groot = { features = ["jazzy", "lerobot-groot", "dev"] }
 
@@ -58,6 +58,13 @@ ros-jazzy-ros2-controllers = "*"
 colcon-common-extensions = "*"
 rosdep = "*"
 ros-jazzy-rmw-cyclonedds-cpp = "*"
+
+# --- PI0.5 SPECIFIC FEATURE ---
+[feature.lerobot.dependencies]
+pynput = "*"
+
+[feature.lerobot.pypi-dependencies]
+lerobot = { git = "https://github.com/huggingface/lerobot", tag = "v0.4.4"}
 
 # --- PI0.5 SPECIFIC FEATURE ---
 [feature.lerobot-pi05.dependencies]
