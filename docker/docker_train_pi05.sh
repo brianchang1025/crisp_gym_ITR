@@ -10,6 +10,8 @@ JOB_NAME=jobname
 # replace with your policy repo e.g. cbrian/pi05_test_trained_policy
 POLICY_REPO=username/policy_name
 
+STEPS=2000
+
 lerobot-train \
     --dataset.repo_id="$DATASET_REPO" \
     --policy.type=pi05 \
@@ -23,7 +25,7 @@ lerobot-train \
     --policy.dtype=bfloat16 \
     --policy.freeze_vision_encoder=false \
     --policy.train_expert_only=true \
-    --steps=1000 \
+    --steps=$STEPS \
     --policy.device=cuda:0 \
     --batch_size=32 \
     --eval_freq 500 \

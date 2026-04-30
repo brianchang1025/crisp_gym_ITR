@@ -12,13 +12,9 @@ leader:
     - 7.97426445e-01
 
 leader_gripper:
-  min_value: 1046.0
-  max_value: 2065.0
-  joint_state_topic: /left/gripper/dynamixel_motor/joint_states
-  command_topic: /left/gripper/dynamixel_motor/command
-  enable_torque_service: /left/gripper/dynamixel_motor/set_torque
+  from_yaml: grippers/panda_gripper.yaml
 
-leader_namespace: left
-leader_gripper_namespace: left/gripper
+leader_namespace: right
+leader_gripper_namespace: right
 
 gravity_compensation_controller: control/gravity_compensation.yaml

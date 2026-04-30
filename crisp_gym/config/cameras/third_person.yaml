@@ -1,0 +1,5 @@
+camera_name: third_person
+camera_frame: third_person_link
+resolution: [256, 256]
+camera_color_image_topic: /camera/third_person_camera/color/image_raw
+camera_color_info_topic: /camera/third_person_camera/color/camera_info

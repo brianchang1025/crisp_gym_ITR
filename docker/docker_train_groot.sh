@@ -10,6 +10,8 @@ JOB_NAME=jobname
 # replace with your policy repo e.g. cbrian/pi05_test_trained_policy
 POLICY_REPO=username/policy_repo_name
 
+STEPS=2000
+
 lerobot-train \
     --dataset.repo_id="$DATASET_REPO" \
     --policy.type=groot \
@@ -19,7 +21,7 @@ lerobot-train \
     --wandb.enable=true \
     --wandb.disable_artifact=true \
     --policy.tune_diffusion_model=false \
-    --steps=1000 \
+    --steps=$STEPS \
     --policy.device=cuda:0 \
     --batch_size=32 \
     --eval_freq 500 \

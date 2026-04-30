@@ -1,0 +1,6 @@
+joint_state_topic: gripper/joint_states
+closing_state_topic: gripper/closing_state
+command_topic: gripper/gripper_position_controller/commands
+closing_command_topic: gripper/gripper_closing_controller/commands
+max_value: 0.08
+min_value: 0.0

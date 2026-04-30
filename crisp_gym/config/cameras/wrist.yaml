@@ -1,0 +1,5 @@
+camera_name: wrist
+camera_frame: wrist_link
+resolution: [256, 256]
+camera_color_image_topic: /camera/wrist_camera/color/image_raw
+camera_color_info_topic: /camera/wrist_camera/color/camera_info

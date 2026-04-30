@@ -66,6 +66,7 @@ if [ $? -eq 0 ]; then
 
     echo "Running Docker container: $CONTAINER_NAME"
     docker run -it \
+        --ipc=host \
         --gpus all \
         --name "$CONTAINER_NAME" \
         -v "$WORKSPACE_PATH:/workspace" \

@@ -1,0 +1,17 @@
+leader:
+  robot_type: "panda"
+  publish_frequency: 50.0
+  time_to_home: 2.0
+  home_config:
+    - 0.0
+    - -0.785
+    - 0.0
+    - -2.355
+    - 0.0
+    - 1.57
+    - 0.785
+
+leader_gripper:
+  from_yaml: grippers/panda_gripper.yaml
+
+gravity_compensation_controller: control/gravity_compensation.yaml

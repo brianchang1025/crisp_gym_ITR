@@ -76,6 +76,20 @@ class TeleopRobotConfig(ABC):
 
         return cls(**data)
 
+@dataclass
+class PandaTeleopRobotConfig(TeleopRobotConfig):
+    """Configuration for a Panda teleoperation leader robot."""
+
+    leader: RobotConfig = field(default_factory=lambda: PandaConfig())
+    leader_gripper: GripperConfig | None = field(
+        default_factory=lambda: GripperConfig.from_yaml(
+            path=(find_config("grippers/panda_gripper.yaml")).resolve()
+        )
+    )
+
+    gravity_compensation_controller: Path = field(
+        default_factory=lambda: find_config("control/gravity_compensation.yaml")
+    )
 
 @dataclass
 class LeftPandaTeleopRobotConfig(TeleopRobotConfig):
@@ -84,7 +98,7 @@ class LeftPandaTeleopRobotConfig(TeleopRobotConfig):
     leader: RobotConfig = field(default_factory=lambda: PandaConfig())
     leader_gripper: GripperConfig | None = field(
         default_factory=lambda: GripperConfig.from_yaml(
-            path=(find_config("gripper_left.yaml")).resolve()
+            path=(find_config("grippers/gripper_left.yaml")).resolve()
         )
     )
 
@@ -103,7 +117,7 @@ class RightPandaTeleopRobotConfig(TeleopRobotConfig):
     leader: RobotConfig = field(default_factory=lambda: PandaConfig())
     leader_gripper: GripperConfig | None = field(
         default_factory=lambda: GripperConfig.from_yaml(
-            path=(find_config("gripper_right.yaml")).resolve()
+            path=(find_config("grippers/gripper_right.yaml")).resolve()
         )
     )
 
@@ -126,20 +140,6 @@ class NoGripperTeleopRobotConfig(TeleopRobotConfig):
         default_factory=lambda: find_config("control/gravity_compensation.yaml")
         or CRISP_CONFIG_PATH / "control" / "gravity_compensation.yaml"
     )
-
-
-@dataclass
-class RightNoGripperTeleopRobotConfig(NoGripperTeleopRobotConfig):
-    """Configuration for a teleoperation robot without a gripper."""
-
-    leader_namespace: str = "right"
-
-
-@dataclass
-class LeftNoGripperTeleopRobotConfig(NoGripperTeleopRobotConfig):
-    """Configuration for a teleoperation robot without a gripper."""
-
-    leader_namespace: str = "left"
 
 
 def make_leader_config(
@@ -186,9 +186,8 @@ def list_leader_configs() -> list[str]:
 
 
 STRING_TO_CONFIG = {
+    "panda": PandaTeleopRobotConfig,
     "left_panda": LeftPandaTeleopRobotConfig,
     "right_panda": RightPandaTeleopRobotConfig,
     "no_gripper": NoGripperTeleopRobotConfig,
-    "right_no_gripper": RightNoGripperTeleopRobotConfig,
-    "left_no_gripper": LeftNoGripperTeleopRobotConfig,
 }
