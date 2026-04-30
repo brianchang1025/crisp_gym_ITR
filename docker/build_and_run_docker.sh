@@ -60,6 +60,10 @@ docker build -f "$SCRIPT_DIR/$DOCKERFILE" -t "$IMAGE_NAME:latest" "$SCRIPT_DIR/.
 if [ $? -eq 0 ]; then
     echo ""
     echo "Docker image built successfully."
+
+    # Ensure workspace permissions are set for Docker
+    chmod -R 777 "$WORKSPACE_PATH"
+
     echo "Running Docker container: $CONTAINER_NAME"
     docker run -it \
         --gpus all \
@@ -67,6 +71,7 @@ if [ $? -eq 0 ]; then
         -v "$WORKSPACE_PATH:/workspace" \
         -w /workspace \
         "$IMAGE_NAME:latest"
+        
 else
     echo "Docker build failed. Exiting."
     exit 1
