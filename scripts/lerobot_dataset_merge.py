@@ -2,7 +2,7 @@
 """Merge multiple LeRobot datasets and upload to HuggingFace.
 
 Usage:
-    pixi run -e jazzy-lerobot python scripts/lerobot_dataset+check.py \
+    pixi run -e jazzy-lerobot python scripts/lerobot_dataset_merge.py \
         --datasets cbrian/dataset_A cbrian/dataset_B cbrian/dataset_C \
         --output cbrian/dataset_merged \
         [--local-dir ./merged_output] \

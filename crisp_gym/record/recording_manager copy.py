@@ -274,7 +274,6 @@ class RecordingManager(ABC):
         data_fn: Callable[[], tuple[Observation, Action]],
         task: str,
         on_start: Callable[[], None] | None = None,
-        in_process: Callable[[], None] | None = None,
         on_end: Callable[[], None] | None = None,
     ) -> None:
         """Record a single episode from user-provided data function.
@@ -283,7 +282,6 @@ class RecordingManager(ABC):
             data_fn: A function that returns (obs, action) at each step.
             task: The task label for the episode.
             on_start: Optional hook called at the start of the episode.
-            in_process: Optional hook called during the episode after each data collection.
             on_end: Optional hook called at the end (before save/delete).
         """
         try:
@@ -291,43 +289,16 @@ class RecordingManager(ABC):
         except StopIteration:
             logger.info("Recording manager is shutting down.")
             return
-        
+
         if on_start:
             logger.info("Resetting Environment.")
-            try:
-                on_start()
-            except RuntimeError as e:
-                logger.exception(f"Runtime error occurred during recording: {e}.")
-                logger.error(
-                    "Please make sure to start the recording after franka is fully rebooted and ready."
-                )
-                self.state = "is_waiting"
-                return
-            except Exception as e:
-                logger.exception(f"An error occurred during recording: {e}.")
-                logger.error(
-                        "Please make sure to start the recording after franka is fully rebooted and ready."
-                )
-                self.state = "is_waiting"
-                return
-            
+            on_start()
+
         logger.info("Started recording episode.")
 
         while self.state == "recording":
             frame_start = time.time()
-            
-            
-            if in_process:
-                try:
-                    in_process()
-                except Exception as e:
-                    logger.exception(f"An error occurred in the in_process hook: {e}")
-                    logger.error("Rebooting the robot to recover from the error before continuing.")
-                    logger.info("Paused recording")
-                    self.state = "paused"
-                    self._handle_post_episode()
-                    return
-                
+
             obs, action = data_fn()
 
             if obs is None or action is None:
@@ -359,6 +330,8 @@ class RecordingManager(ABC):
                     logger.error(
                         "This error might occur if franka has been shutdown while the script is still running. Please make sure to shutdown the script before shutting down franka."
                     )
+                    
+
             except Exception as e:
                 logger.exception(f"An error occurred during recording: {e}.")
 
@@ -423,8 +396,8 @@ class RecordingManager(ABC):
             self.state = "exit"
         else:
             self.state = "is_waiting"
-    
-    
+
+
 class ROSRecordingManager(RecordingManager):
     """ROS-based recording manager for controlling episode recording."""
 

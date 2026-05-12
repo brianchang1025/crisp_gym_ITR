@@ -54,7 +54,9 @@ class TeleopRobot:
         self.robot.controller_switcher_client.switch_controller("cartesian_impedance_controller")
 
         if self.gripper is not None and not self.config.disable_gripper_torque:
+            self.gripper.open()
             self.gripper.disable_torque()
+            
 
 
 def make_leader(name: str, namespace: str = "") -> TeleopRobot:

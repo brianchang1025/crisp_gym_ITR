@@ -308,8 +308,8 @@ class ManipulatorBaseEnv(gym.Env):
             if self.config.gripper_mode != GripperMode.NONE
             else np.array([0.0])
         )
-        gripper_closing_state = (
-            np.array([float(self.gripper.closing_state())])
+        gripper_status = (
+            np.array([float(self.gripper.current_status)])
             if self.config.gripper_mode != GripperMode.NONE
             else np.array([0.0])
         )
@@ -321,7 +321,7 @@ class ManipulatorBaseEnv(gym.Env):
         # Gripper state
         if ObservationKeys.GRIPPER_OBS in self.config.observations_to_include_to_state:
             #obs[ObservationKeys.GRIPPER_OBS] = gripper_value.astype(np.float32)
-            obs[ObservationKeys.GRIPPER_OBS] = gripper_closing_state.astype(np.float32)
+            obs[ObservationKeys.GRIPPER_OBS] = gripper_status.astype(np.float32)
 
 
         # Joint state
@@ -348,15 +348,13 @@ class ManipulatorBaseEnv(gym.Env):
         """
         if self.config.gripper_mode == GripperMode.NONE:
             return
+        
         elif self.config.gripper_mode == GripperMode.ABSOLUTE_BINARY:
-            if action < self.config.gripper_threshold and self.gripper.is_open(
-                open_threshold=self.config.gripper_threshold
-            ):
-                self.gripper.close()
-            elif action >= self.config.gripper_threshold and not self.gripper.is_open(
-                open_threshold=self.config.gripper_threshold
-            ):
-                self.gripper.open()
+            if action < 0.5 and self.gripper.current_status:
+                self.gripper.set_target_status(False) #use new logic in gripper to set gripper state directly instead of using set_target which is for position control
+            elif action >= 0.5 and not self.gripper.current_status:
+                self.gripper.set_target_status(True) #use new logic in gripper to set gripper state directly instead of using set_target which is for position control
+        
         elif self.config.gripper_mode == GripperMode.RELATIVE_BINARY:
             if action < 0 and self.gripper.is_open(open_threshold=self.config.gripper_threshold):
                 self.gripper.close()
@@ -365,10 +363,7 @@ class ManipulatorBaseEnv(gym.Env):
             ):
                 self.gripper.open()
         elif self.config.gripper_mode == GripperMode.ABSOLUTE_CONTINUOUS:
-            if action < 0.5 and self.gripper.closing_state():
-                self.gripper.set_gripper_state(False) #use new logic in gripper to set gripper state directly instead of using set_target which is for position control
-            elif action >= 0.5 and not self.gripper.closing_state():
-                self.gripper.set_gripper_state(True) #use new logic in gripper to set gripper state directly instead of using set_target which is for position control
+            self.gripper.set_target(np.clip(action, 0.0, 1.0))
         elif self.config.gripper_mode == GripperMode.RELATIVE_CONTINUOUS:
             self.gripper.set_target(np.clip(self.gripper.value + action, 0.0, 1.0))
         else:

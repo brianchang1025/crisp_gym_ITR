@@ -18,6 +18,8 @@ from crisp_gym.util import prompt
 from crisp_gym.util.lerobot_features import get_features
 from crisp_gym.util.setup_logger import setup_logging
 
+from huggingface_hub import snapshot_download
+
 
 def main():
     """Deploy a pretrained policy and record deployment data in Lerobot Format."""
@@ -115,6 +117,12 @@ def main():
         default=False,
         help="Whether to evaluate the performance of the model after each episode.",
     )
+    parser.add_argument(
+        "--policy-source",
+        choices=["hf", "local"],
+        default=None,
+        help="Whether to load the pretrained model from the Hugging Face Hub or from a local path.",
+    )
 
     args = parser.parse_args()
     logger = logging.getLogger(__name__)
@@ -131,28 +139,72 @@ def main():
             "Please enter the repository ID for the dataset (e.g., 'username/dataset_name'):",
         )
         logger.info(f"Using repository ID: {args.repo_id}")
+    
+    if args.policy_source is None:
+        args.policy_source = prompt.prompt(
+            "Please enter the source of the policy (either 'hf' or 'local'):",
+            options=["hf", "local"],
+            default="hf"
+        )
+        
+    if args.policy_source == "hf":
+        args.path = prompt.prompt(
+            "Please enter the Hugging Face repository ID for the pretrained model (e.g., 'username/model_name'):",
+        )
+        logger.info(f"Using Hugging Face repository ID: {args.path}")
+        snapshot_download(
+            repo_id=args.path, 
+            local_dir = f"./models/{args.path.split('/')[-1]}"
+        )
+        args.path = f"./models/{args.path.split('/')[-1]}"
+        logger.info(f"Model downloaded to: {args.path}")
+        
+    elif args.policy_source == "local":
+    # 1. Ask for manual input first
+        manual_path = prompt.prompt(
+            "Enter a custom path to a model (or press Enter to see a list of local models):",
+            default=""
+        )
 
-    if args.path is None:
-        logger.info(" No path provided. Searching for models in 'outputs/train' directory.")
-
-        # We check recursively in the 'outputs/train' directory for 'pretrained_model's recursively
-        models_path = Path("outputs/train")
-        if models_path.exists() and models_path.is_dir():
-            models = [model for model in models_path.glob("**/pretrained_model") if model.is_dir()]
-            models_names = sorted([str(model) for model in models], key=lambda x: x.lower())
-
-            args.path = prompt.prompt(
-                message="Please select a model to use for deployment:",
-                options=models_names,
-                default=models_names[0] if models else None,
-            )
-            logger.info(f"Using model path: {args.path}")
+        if manual_path.strip():
+            # User typed something, use it directly
+            args.path = manual_path.strip()
+            logger.info(f"Using manually entered path: {args.path}")
         else:
-            logger.error("'outputs/models' directory does not exist.")
-            logger.error(
-                "Please provide a valid path to the model using --path or create a new one."
-            )
-            exit(1)
+            # 2. User pressed Enter, trigger the search logic
+            models_path = Path("models")
+            outputs_path = Path("outputs")
+            all_models = []
+
+            if models_path.exists() or outputs_path.exists():
+                # Search 'models' for weight files
+                if models_path.is_dir():
+                    for weight_file in models_path.glob("**/*.safetensors"):
+                        all_models.append(weight_file.parent)
+                
+                # Search 'outputs' for specific training folders
+                if outputs_path.is_dir():
+                    for pm_folder in outputs_path.glob("**/pretrained_model"):
+                        if pm_folder.is_dir():
+                            all_models.append(pm_folder)
+
+                # Clean duplicates and sort
+                all_models_name = sorted(list(set(str(model) for model in all_models)), key=lambda x: x.lower())
+
+                args.path = prompt.prompt(
+                    message="Please select a model to use for deployment:",
+                    options=all_models_name,
+                    default=all_models_name[0] if all_models_name else None,
+                )
+                logger.info(f"Using model path: {args.path}")
+                
+            else:
+                logger.error("'outputs' and 'models' directories do not exist.")
+                logger.error(
+                    "Please provide a valid path to the model using --path or create a new one."
+                )
+                exit(1)
+
 
     if args.env_namespace is None:
         args.env_namespace = prompt.prompt(
@@ -209,6 +261,7 @@ def main():
             num_episodes=args.num_episodes,
             fps=args.fps,
             resume=args.resume,
+            push_to_hub=args.push_to_hub,
         )
         recording_manager.wait_until_ready()
 
@@ -230,9 +283,13 @@ def main():
         def on_start():
             """Hook function to be called when starting a new episode."""
             env.robot.reset_targets()
+            env.robot.home(blocking=True)
             env.reset()
             policy.reset()
             evaluator.start_timer()
+        
+        def in_process():
+            env.robot.robot_mode_monitor()
 
         def on_end():
             """Hook function to be called when stopping the recording."""
@@ -258,6 +315,7 @@ def main():
                         data_fn=policy.make_data_fn(task_description=task),
                         task=task,
                         on_start=on_start,
+                        in_process=in_process,
                         on_end=on_end,
                     )
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # replace with your dataset repo e.g. cbrian/pi05_test_dataset
-DATASET_REPO=username/dataset_repo_name
+DATASET_REPO=cbrian/dataset_env_SST_SP9_WC1_TC1_task_pickplaceblueblock_numepi_10_ctrl_cartesian
 # replace with your output directory e.g. outputs/pi05_test_training
 # NOTE: Keep "outputs/" prefix, only change the folder name after it
 OUTPUT_DIR=outputs/output_folder_name
@@ -19,16 +19,16 @@ pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train \
     --policy.pretrained_path=lerobot/pi05_libero \
     --policy.compile_model=false \
     --policy.gradient_checkpointing=true \
-    --wandb.enable=true \
+    --wandb.enable=false \
     --policy.dtype=bfloat16 \
     --policy.freeze_vision_encoder=false \
     --policy.train_expert_only=true \
-    --steps=1000 \
+    --steps=100 \
     --policy.device=cuda:0 \
-    --batch_size=32 \
-    --eval_freq 500 \
+    --batch_size=2 \
+    --eval_freq 100 \
     --eval.n_episodes 50 \
     --save_checkpoint true \
-    --save_freq 500 \
+    --save_freq 100 \
 
 # Use pixi run -e jazzy-pi05 python -m lerobot.scripts.lerobot_train --help to see all available options and their descriptions.

@@ -142,8 +142,8 @@ def make_teleop_fn(env: ManipulatorBaseEnv, leader: TeleopRobot) -> Callable:
         prev_joint = joint
 
         gripper_action = _leader_gripper_to_action(
-            leader_value=leader.gripper.closing_state() if leader.gripper is not None else False,
-            follower_value=env.gripper.closing_state() if env.gripper is not None else False,
+            leader_value=leader.gripper.current_status if leader.gripper is not None else False,
+            follower_value=env.gripper.current_status if env.gripper is not None else False,
             control_mode=env.config.gripper_mode,
         )
 
