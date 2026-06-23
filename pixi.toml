@@ -58,6 +58,7 @@ ros-jazzy-ros2-controllers = "*"
 colcon-common-extensions = "*"
 rosdep = "*"
 ros-jazzy-rmw-cyclonedds-cpp = "*"
+ros-jazzy-image-transport-plugins = "*"
 
 # --- PI0.5 SPECIFIC FEATURE ---
 [feature.lerobot.dependencies]

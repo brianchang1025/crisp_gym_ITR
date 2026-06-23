@@ -23,6 +23,18 @@ home_front_up = [
     0.8040582,
 ]
 
+home_touch_table = [
+    0.0,
+    0.066,
+    0.04,
+    -2.9,
+    0.0,
+    2.9,
+    0.785,
+]
+
+
+
 home_panda = [
     0.0,
     -0.785,
@@ -38,6 +50,7 @@ class HomeConfig(Enum):
     """Enum for different home configurations."""
 
     CLOSE_TO_TABLE = home_close_to_table
+    TOUCH_TABLE = home_touch_table
     FRONT_UP = home_front_up
     PANDA = home_panda
 

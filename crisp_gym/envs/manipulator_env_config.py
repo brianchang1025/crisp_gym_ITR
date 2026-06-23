@@ -350,7 +350,7 @@ class OnlyWristCamPandaEnvConfig(PandaEnvConfig):
 
 @dataclass
 class FrankaGripperPandaEnvConfig(PandaEnvConfig):
-    """Custom Panda Gym Environment Configuration for Panda with an Aloha gripper and cameras."""
+    """Custom Panda Gym Environment Configuration for Panda with an Franka gripper and cameras."""
 
     # The aloha gripper can be controlled in a continuous manner, so we set this to True.
     # For more information on the gripper, check: https://github.com/TUM-LSY/aloha4franka

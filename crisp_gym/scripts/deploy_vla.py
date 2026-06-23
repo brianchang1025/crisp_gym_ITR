@@ -8,6 +8,7 @@ import numpy as np
 import multiprocessing as mp
 
 import crisp_gym  # noqa: F401
+from crisp_gym.config.home import HomeConfig
 from crisp_gym.envs.manipulator_env import make_env
 from crisp_gym.envs.manipulator_env_config import list_env_configs
 from crisp_gym.policy import make_policy
@@ -123,6 +124,12 @@ def main():
         default=None,
         help="Whether to load the pretrained model from the Hugging Face Hub or from a local path.",
     )
+    parser.add_argument(
+        "--home-config-noise",
+        type=float,
+        default=0.0,
+        help="Noise to add to the home configuration when homing the robots to randomize the position a bit.",
+    )
 
     args = parser.parse_args()
     logger = logging.getLogger(__name__)
@@ -218,7 +225,7 @@ def main():
         args.env_config = prompt.prompt(
             "Please enter the follower robot configuration name.",
             options=follower_configs,
-            default=follower_configs[3],
+            default=follower_configs[0],
         )
         logger.info(f"Using follower configuration: {args.env_config}")
 
@@ -275,7 +282,8 @@ def main():
 
         logger.info("Homing robot before starting with recording.")
 
-        env.home()
+        env.robot.home(home_config=HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise))
+        #env.home()
         env.reset()
 
         tasks = list(args.tasks)
@@ -283,7 +291,8 @@ def main():
         def on_start():
             """Hook function to be called when starting a new episode."""
             env.robot.reset_targets()
-            env.robot.home(blocking=True)
+            env.robot.home(blocking=False, home_config=HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise))
+            #env.robot.home(blocking=True)
             env.reset()
             policy.reset()
             evaluator.start_timer()
@@ -294,7 +303,8 @@ def main():
         def on_end():
             """Hook function to be called when stopping the recording."""
             env.robot.reset_targets()
-            env.robot.home(blocking=False)
+            env.robot.home(blocking=False, home_config=HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise))
+            #env.robot.home(blocking=False)
             env.gripper.open()
 
             logger.info("Waiting for user to decide on success/failure if evaluating...")

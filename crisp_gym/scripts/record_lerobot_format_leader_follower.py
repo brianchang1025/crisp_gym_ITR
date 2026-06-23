@@ -221,8 +221,8 @@ def main():
             leader.prepare_for_teleop()
 
         env.wait_until_ready()
-        #env.home(home_config=HomeConfig.CLOSE_TO_TABLE.randomize(noise=args.home_config_noise))
-        env.home()
+        env.home(home_config=HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise))
+        #env.home()
         env.reset()
 
         tasks = list(args.tasks)
@@ -232,7 +232,7 @@ def main():
             
                 
             env.robot.reset_targets()
-            env.robot.home(blocking=False)
+            env.robot.home(blocking=False, home_config=HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise))
             env.reset()
 
             if isinstance(leader, TeleopRobot):
@@ -240,7 +240,7 @@ def main():
                 
                     
                 leader.robot.reset_targets()
-                leader.robot.home(blocking=False)
+                leader.robot.home(blocking=False, home_config=HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise))
                 leader.robot.cartesian_controller_parameters_client.load_param_config(
                     leader.config.gravity_compensation_controller
                 )
@@ -261,14 +261,14 @@ def main():
         def on_end():
             """Hook function to be called when stopping the recording."""
             env.robot.reset_targets()
-            #random_home = HomeConfig.CLOSE_TO_TABLE.randomize(noise=args.home_config_noise)
-            #env.robot.home(blocking=False, home_config=random_home)
-            env.robot.home(blocking=False)
+            random_home = HomeConfig.TOUCH_TABLE.randomize(noise=args.home_config_noise)
+            env.robot.home(blocking=False, home_config=random_home)
+            #env.robot.home(blocking=False)
             if isinstance(leader, TeleopRobot):
                 leader.robot.reset_targets()
                 # Activate incase leader should go to the random home as well
-                # leader.robot.home(blocking=False, home_config=random_home)
-                leader.robot.home(blocking=False)
+                leader.robot.home(blocking=False, home_config=random_home)
+                #leader.robot.home(blocking=False)
                 leader.gripper.open()
             env.gripper.open()
 

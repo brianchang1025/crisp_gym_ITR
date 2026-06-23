@@ -35,6 +35,7 @@ import torch.utils.data
 import tqdm
 
 import crisp_gym  # noqa: F401
+from crisp_gym.config.home import HomeConfig
 from crisp_gym.envs.manipulator_env import make_env
 from crisp_gym.envs.manipulator_env_config import list_env_configs
 from crisp_gym.util import prompt
@@ -138,7 +139,7 @@ def replay_dataset_on_robot(
         env.wait_until_ready()
         if home_before_start:
             logging.info("Homing robot before replay...")
-            env.home()
+            env.home(home_config=HomeConfig.TOUCH_TABLE.randomize(noise=0.0))
         env.reset()
 
         logging.info("Starting replay...")
@@ -164,7 +165,7 @@ def replay_dataset_on_robot(
 
                     logging.info(f"--- Replaying episode {ep_idx} ---")
                     logging.info("Homing robot at start of episode...")
-                    env.home()
+                    env.home(home_config=HomeConfig.TOUCH_TABLE.randomize(noise=0.0))
                     env.reset()
 
                 # --- Rerun logging (mirrors replay_dataset.py / lerobot_dataset_viz) ---
